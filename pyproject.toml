@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools>=57.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+target-version = ["py310"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "src"]
+addopts = "--doctest-modules"
