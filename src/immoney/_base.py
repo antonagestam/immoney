@@ -119,7 +119,8 @@ class Money(Generic[C]):
         return NotImplemented
 
     # TODO: Support precision-lossy multiplication with floats?
-    def __mul__(self: Money[C], other: int) -> Money[C]:
+    # TODO: Can the allowed multiplication types be reflected properly here?
+    def __mul__(self, other: object) -> Money[C]:
         if isinstance(other, int):
             return Money(self.value * other, self.currency)
         return NotImplemented
@@ -194,7 +195,15 @@ class Debt(Generic[C]):
     def __init__(self, money: Money[C]) -> None:
         self.money: Final = money
 
+    @overload
     def __eq__(self: Debt[C], other: Debt[C]) -> bool:
+        ...
+
+    @overload
+    def __eq__(self, other: object) -> bool:
+        ...
+
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Debt) and other.money.currency == self.money.currency:
             return self.money.value == other.money.value
         return NotImplemented

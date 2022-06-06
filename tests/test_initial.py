@@ -31,5 +31,4 @@ def test_embryo_of_a_suite():
     # nok + nok
     # m + m
 
-
     assert m - 2 * m == Debt(m)
