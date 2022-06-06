@@ -31,13 +31,12 @@ def test_embryo_of_a_suite():
     assert d == Money("1.34", SEK)
     assert a + b + c + d == m
 
-    # nok = Money(1, NOK)
-    # reveal_type(NOK)
-    # reveal_type(nok)
-    # reveal_type(m)
-    # nok + m  # should give type error :)
-    # nok + nok
-    # m + m
+    nok = Money(1, NOK)
+    assert nok + nok == NOK(2)
+    assert m + m == m * 2
+    with pytest.raises(TypeError):
+        # TODO: Test this type error
+        nok + m  # type: ignore[operator]
 
     assert m - 2 * m == Overdraft(m)
 
