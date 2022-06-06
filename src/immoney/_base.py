@@ -15,7 +15,6 @@ from functools import cached_property
 from typing import Annotated
 from typing import Final
 from typing import Generic
-from typing import Literal
 from typing import TypeVar
 from typing import overload
 
@@ -115,8 +114,8 @@ class Money(Generic[C]):
     # TODO: Can the allowed multiplication types be reflected properly here?
     # TODO: Support multiplication with negative value? Is it OK for SubunitFraction to
     #   support negative values? SubunitFraction.round() would need to return union of
-    #   Money | Overdraft. Alternative would be to introduce SubunitFractionOverdraft, which seems
-    #   like too much complexity?
+    #   Money | Overdraft. Alternative would be to introduce SubunitFractionOverdraft,
+    #   which like an amount of complexity that is hard to justify.
     @overload
     def __mul__(self: Money[C], other: int) -> Money[C]:
         ...
@@ -200,7 +199,7 @@ class Round(enum.Enum):
 class SubunitFraction(Generic[C]):
     __slots__ = ("value", "currency", "__weakref__")
 
-    def __init__(self, value: Fraction, currency: Currency) -> None:
+    def __init__(self, value: Fraction, currency: C) -> None:
         self.value: Final = value
         self.currency: Final = currency
 
@@ -255,9 +254,7 @@ class Overdraft(Generic[C]):
     def __add__(self: Overdraft[C], other: Overdraft[C]) -> Overdraft[C]:
         ...
 
-    def __add__(
-        self: Overdraft[C], other: Money[C] | Overdraft[C]
-    ) -> Money[C] | Overdraft[C]:
+    def __add__(self: Overdraft[C], other: object) -> Money[C] | Overdraft[C]:
         if isinstance(other, Money):
             return other - self.money
         if isinstance(other, Overdraft):
