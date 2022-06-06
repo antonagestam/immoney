@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Final, final
+from typing import Final
+from typing import final
 
 from . import Currency
 

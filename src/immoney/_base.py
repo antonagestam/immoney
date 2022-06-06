@@ -1,22 +1,23 @@
 from __future__ import annotations
 
+import abc
+import math
 from decimal import ROUND_DOWN
+from decimal import Decimal
 from fractions import Fraction
-from itertools import chain
+from functools import cached_property
+from typing import Annotated
+from typing import Final
 from typing import Generic
 from typing import Literal
+from typing import TypeVar
 from typing import overload
 
-import math
-from decimal import Decimal
-from functools import cached_property
-from typing import TypeVar, Final, Annotated
+from abcattrs import Abstract
+from abcattrs import abstractattrs
 
 from ._primitives import PositiveDecimal
 from .errors import MoneyParseError
-from abcattrs import Abstract, abstractattrs
-import abc
-
 
 CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 
@@ -112,8 +113,8 @@ class Money(Generic[C]):
             value = self.value - other.value
             return (
                 Money(value, self.currency)
-                if value >= 0 else
-                Debt(Money(-value, self.currency))
+                if value >= 0
+                else Debt(Money(-value, self.currency))
             )
         return NotImplemented
 
