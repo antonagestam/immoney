@@ -24,9 +24,25 @@ possible.
 (Money('0.04', SEK), Money('0.04', SEK), Money('0.03', SEK))
 ```
 
-#### Money fractions
+#### Subunit fractions
 
-...
+Sometimes we do need to represent fractions of monetary values that are smaller than the
+subunit of a currency, for instance as a partial result of a larger equation. For that
+purpose, this library exposes a `SubunitFraction` type. This type is used as return type
+for `Money.__floordiv__`.
+
+```pycon
+>>> SEK(13) // 3
+SubunitFraction('1300/3', SEK)
+```
+
+Because there is no guarantee that a `SubunitFraction` is a whole subunit (by definition
+...), converting back to `Money` can only be done with precision loss.
+
+```pycon
+>>> (SEK(13) // 3).round(Round.DOWN)
+Money('4.33', SEK)
+```
 
 #### Overdraft
 
