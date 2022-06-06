@@ -1,32 +1,39 @@
 from __future__ import annotations
 
+import enum
 import math
-from dataclasses import dataclass
 from decimal import ROUND_DOWN
 from decimal import Decimal
 from fractions import Fraction
 from functools import cached_property
 from itertools import chain
-from typing import Final, Literal
+from typing import Final
 from typing import Generic
+from typing import Literal
 from typing import TypeVar
 from typing import overload
 
-from typing_extensions import Self
-
-from src.immoney.errors import MoneyParseError
+from .errors import MoneyParseError
 
 from ._types import PositiveDecimal
 
 
-@dataclass(frozen=True)
-class Currency:
-    code: str
-    # numeric: str | None
-    subunit: int = 1
+CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 
-    # name: str | None = None
-    # countries: Sequence[str] | None = None
+
+class Currency(str, enum.Enum):
+    code: str
+    subunit: int
+
+    SEK = "SEK", 100
+    NOK = "NOK", 100
+
+    def __new__(cls, code: str, subunit: int) -> Currency:
+        obj = str.__new__(cls, code)
+        obj._value_ = code
+        obj.code = code
+        obj.subunit = subunit
+        return obj
 
     def __str__(self) -> str:
         return self.code
@@ -37,35 +44,35 @@ class Currency:
         return Decimal("0." + int(math.log10(self.subunit)) * "0")
 
     @cached_property
-    def zero(self: Self) -> Money[Self]:
+    def zero(self: CurrencySelf) -> Money[CurrencySelf]:
         return Money(0, self)
 
-    @cached_property
-    def one_subunit(self) -> Money[Self]:
-        return Money
-
     def normalize_value(self, value: Decimal | int | str) -> PositiveDecimal:
+        quantized = Decimal(value).quantize(self.decimal_exponent)
+
         try:
-            positive = PositiveDecimal.parse(value)
+            positive = PositiveDecimal.parse(quantized)
         except (TypeError, ValueError) as e:
-            raise MoneyParseError("Failed to interpret value as non-negative decimal")
-        quantized = positive.quantize(self.decimal_exponent)
+            raise MoneyParseError("Failed to interpret value as non-negative decimal") from e
+
         if positive != quantized:
             raise MoneyParseError(
                 "Cannot interpret value as Money of currency {self.code} without loss "
                 "of precision. Explicitly round the value or consider using "
                 "MoneyFraction."
             )
-        return quantized
+
+        return positive
 
 
 C = TypeVar("C", bound=Currency)
+MoneySelf = TypeVar("MoneySelf", bound="Money")
 
 
 class Money(Generic[C]):
     __slots__ = ("value", "currency", "__weakref__")
 
-    def __init__(self, value: Decimal | int | str, currency: Currency | str) -> None:
+    def __init__(self, value: Decimal | int | str, currency: C) -> None:
         self.value: Final = PositiveDecimal.parse(value)
         self.currency: Final = currency
 
@@ -81,7 +88,7 @@ class Money(Generic[C]):
         ...
 
     @overload
-    def __eq__(self, other: object) -> NotImplemented:
+    def __eq__(self, other: object) -> bool:
         ...
 
     def __eq__(self, other: object) -> bool:
@@ -91,41 +98,17 @@ class Money(Generic[C]):
             return self.value == other.value
         return NotImplemented
 
-    @overload
     def __gt__(self: Money[C], other: Money[C]) -> bool:
-        ...
-
-    @overload
-    def __gt__(self, other: object) -> NotImplemented:
-        ...
-
-    def __gt__(self, other: object) -> bool:
         if isinstance(other, Money) and self.currency == other.currency:
             return self.value > other.value
         return NotImplemented
 
-    @overload
     def __add__(self: Money[C], other: Money[C]) -> Money[C]:
-        ...
-
-    @overload
-    def __add__(self, other: object) -> NotImplemented:
-        ...
-
-    def __add__(self: Money[C], other: object) -> Money[C]:
         if isinstance(other, Money) and self.currency == other.currency:
             return Money(self.value + other.value, self.currency)
         return NotImplemented
 
-    @overload
-    def __truediv__(self, other: int) -> tuple[Self[C], ...]:
-        ...
-
-    @overload
-    def __truediv__(self, other: object) -> NotImplemented:
-        ...
-
-    def __truediv__(self, other: object) -> tuple[Self[C], ...]:
+    def __truediv__(self: Money[C], other: object) -> tuple[Money[C], ...]:
         """
         Divides the original value over the numerator and returns a tuple of new
         Money instances where the original value is spread as evenly as possible. The
@@ -144,7 +127,7 @@ class Money(Generic[C]):
         under_subunit = under.as_subunit()
         # TODO: Better name
         overflow = self.as_subunit() - under_subunit * other
-        over = Money.from_subunit(under_subunit + 1, self.currency)
+        over = Money[C].from_subunit(under_subunit + 1, self.currency)
 
         return tuple(
             chain(
@@ -152,14 +135,6 @@ class Money(Generic[C]):
                 (under for _ in range(other - overflow)),
             )
         )
-
-    @overload
-    def __floordiv__(self, other: int) -> MoneyFraction[C]:
-        ...
-
-    @overload
-    def __floordiv__(self, other: object) -> NotImplemented:
-        ...
 
     def __floordiv__(self, other: object) -> MoneyFraction[C]:
         if not isinstance(other, int):
@@ -170,14 +145,15 @@ class Money(Generic[C]):
         return int(self.currency.subunit * self.value)
 
     @classmethod
-    def from_subunit(cls, value: int, currency: Currency) -> Self:
+    def from_subunit(cls: type[MoneySelf], value: int, currency: Currency) -> MoneySelf:
         return cls(Decimal(value) / currency.subunit, currency)
 
     @classmethod
     # This needs HKT to allow typing to work properly for subclasses of Money.
     def floored(cls, value: Decimal, currency: C) -> Money[C]:
         return cls(
-            value.quantize(currency.decimal_exponent, rounding=ROUND_DOWN), currency
+            value.quantize(currency.decimal_exponent, rounding=ROUND_DOWN),
+            currency,
         )
 
 

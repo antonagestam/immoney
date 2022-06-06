@@ -60,11 +60,10 @@ repos:
     rev: "v0.942"
     hooks:
       - id: mypy
-        args: []
-        exclude: ^examples/
         additional_dependencies:
           - pytest
           - types-setuptools
+          - phantom-types
   - repo: https://github.com/mgedmin/check-manifest
     rev: "0.48"
     hooks:
