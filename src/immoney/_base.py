@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 import abc
+import enum
 import math
+from decimal import ROUND_05UP
 from decimal import ROUND_DOWN
+from decimal import ROUND_HALF_DOWN
+from decimal import ROUND_HALF_EVEN
+from decimal import ROUND_HALF_UP
+from decimal import ROUND_UP
 from decimal import Decimal
 from fractions import Fraction
 from functools import cached_property
@@ -32,7 +38,7 @@ class Currency(abc.ABC):
         return self.code
 
     def __call__(self: CurrencySelf, value: Decimal | int | str) -> Money[CurrencySelf]:
-        ...
+        return Money(value, self)
 
     @cached_property
     def decimal_exponent(self) -> Decimal:
@@ -57,7 +63,7 @@ class Currency(abc.ABC):
             raise MoneyParseError(
                 "Cannot interpret value as Money of currency {self.code} without loss "
                 "of precision. Explicitly round the value or consider using "
-                "MoneyFraction."
+                "SubunitFraction."
             )
 
         return positive
@@ -78,18 +84,6 @@ class Money(Generic[C]):
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({str(self.value)!r}, {self.currency})"
 
-    @overload
-    def __eq__(self, other: Literal[0]) -> bool:
-        ...
-
-    @overload
-    def __eq__(self: Money[C], other: Money[C]) -> bool:
-        ...
-
-    @overload
-    def __eq__(self, other: object) -> bool:
-        ...
-
     def __eq__(self, other: object) -> bool:
         if isinstance(other, int) and other == 0:
             return self.value == other
@@ -107,22 +101,35 @@ class Money(Generic[C]):
             return Money(self.value + other.value, self.currency)
         return NotImplemented
 
-    # TODO: Handle negative results with a Debt type.
-    def __sub__(self: Money[C], other: Money[C]) -> Money[C] | Debt[C]:
+    def __sub__(self: Money[C], other: Money[C]) -> Money[C] | Overdraft[C]:
         if isinstance(other, Money) and self.currency == other.currency:
             value = self.value - other.value
             return (
                 Money(value, self.currency)
                 if value >= 0
-                else Debt(Money(-value, self.currency))
+                else Overdraft(Money(-value, self.currency))
             )
         return NotImplemented
 
     # TODO: Support precision-lossy multiplication with floats?
     # TODO: Can the allowed multiplication types be reflected properly here?
-    def __mul__(self, other: object) -> Money[C]:
-        if isinstance(other, int):
+    # TODO: Support multiplication with negative value? Is it OK for SubunitFraction to
+    #   support negative values? SubunitFraction.round() would need to return union of
+    #   Money | Overdraft. Alternative would be to introduce SubunitFractionOverdraft, which seems
+    #   like too much complexity?
+    @overload
+    def __mul__(self: Money[C], other: int) -> Money[C]:
+        ...
+
+    @overload
+    def __mul__(self: Money[C], other: Decimal) -> SubunitFraction[C]:
+        ...
+
+    def __mul__(self, other: object) -> Money[C] | SubunitFraction[C]:
+        if isinstance(other, int) and other >= 0:
             return Money(self.value * other, self.currency)
+        if isinstance(other, Decimal) and other >= 0:
+            return SubunitFraction(Fraction(self.as_subunit() * other), self.currency)
         return NotImplemented
 
     def __rmul__(self: Money[C], other: int) -> Money[C]:
@@ -154,10 +161,10 @@ class Money(Generic[C]):
             *(under for _ in range(other - remainder)),
         )
 
-    def __floordiv__(self, other: object) -> MoneyFraction[C]:
+    def __floordiv__(self, other: object) -> SubunitFraction[C]:
         if not isinstance(other, int):
             return NotImplemented
-        return MoneyFraction.from_money(self, other)
+        return SubunitFraction.from_money(self, other)
 
     def as_subunit(self) -> int:
         return int(self.currency.subunit * self.value)
@@ -175,35 +182,84 @@ class Money(Generic[C]):
         )
 
 
+class Round(enum.Enum):
+    """
+    See Python documentation for decimal rounding.
+    https://docs.python.org/3/library/decimal.html#rounding-modes
+    """
+
+    DOWN = ROUND_DOWN
+    UP = ROUND_UP
+    HALF_UP = ROUND_HALF_UP
+    HALF_EVEN = ROUND_HALF_EVEN
+    HALF_DOWN = ROUND_HALF_DOWN
+    ZERO_FIVE_UP = ROUND_05UP
+
+
 # TODO: Make immutable
-class MoneyFraction(Generic[C]):
+class SubunitFraction(Generic[C]):
     __slots__ = ("value", "currency", "__weakref__")
 
     def __init__(self, value: Fraction, currency: Currency) -> None:
         self.value: Final = value
         self.currency: Final = currency
 
+    def __repr__(self) -> str:
+        return f"{type(self).__qualname__}" f"({str(self.value)!r}, {self.currency})"
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, SubunitFraction) and self.currency == other.currency:
+            return self.value == other.value
+        if isinstance(other, Money) and self.currency == other.currency:
+            return self.value == other.as_subunit()
+        return NotImplemented
+
     @classmethod
-    def from_money(cls, money: Money[C], denominator: int) -> MoneyFraction[C]:
-        return MoneyFraction(Fraction(money.as_subunit(), denominator), money.currency)
+    def from_money(cls, money: Money[C], denominator: int) -> SubunitFraction[C]:
+        return SubunitFraction(
+            Fraction(money.as_subunit(), denominator), money.currency
+        )
+
+    def round(self, rounding: Round) -> Money[C]:
+        main_unit = Decimal(float(self.value / self.currency.subunit))
+        quantized = main_unit.quantize(
+            exp=self.currency.decimal_exponent,
+            rounding=rounding.value,
+        )
+        return Money(quantized, self.currency)
 
 
 # TODO: Make immutable
-class Debt(Generic[C]):
+class Overdraft(Generic[C]):
     __slots__ = ("money", "__weakref__")
 
     def __init__(self, money: Money[C]) -> None:
         self.money: Final = money
 
-    @overload
-    def __eq__(self: Debt[C], other: Debt[C]) -> bool:
-        ...
-
-    @overload
-    def __eq__(self, other: object) -> bool:
-        ...
+    def __repr__(self) -> str:
+        return (
+            f"{type(self).__qualname__}"
+            f"({str(self.money.value)!r}, {self.money.currency})"
+        )
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, Debt) and other.money.currency == self.money.currency:
+        if isinstance(other, Overdraft) and other.money.currency == self.money.currency:
             return self.money.value == other.money.value
+        return NotImplemented
+
+    @overload
+    def __add__(self: Overdraft[C], other: Money[C]) -> Money[C] | Overdraft[C]:
+        ...
+
+    @overload
+    def __add__(self: Overdraft[C], other: Overdraft[C]) -> Overdraft[C]:
+        ...
+
+    def __add__(
+        self: Overdraft[C], other: Money[C] | Overdraft[C]
+    ) -> Money[C] | Overdraft[C]:
+        if isinstance(other, Money):
+            return other - self.money
+        if isinstance(other, Overdraft):
+            return Overdraft(self.money + other.money)
         return NotImplemented
