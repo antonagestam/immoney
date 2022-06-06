@@ -101,6 +101,15 @@ class Money(Generic[C]):
         return NotImplemented
 
     def __sub__(self: Money[C], other: Money[C]) -> Money[C] | Overdraft[C]:
+        """
+        >>> from immoney.currencies import SEK
+        >>> SEK(2) - SEK(1)
+        Money('1', SEK)
+        >>> SEK(2) - SEK(2)
+        Money('0', SEK)
+        >>> SEK(2) - SEK(3)
+        Overdraft('1', SEK)
+        """
         if isinstance(other, Money) and self.currency == other.currency:
             value = self.value - other.value
             return (

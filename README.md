@@ -30,7 +30,15 @@ possible.
 
 #### Overdraft
 
-...
+Again referring to real life, there is no such thing as negative money. Following in the
+same vein as for not allowing subunits to be split, the value of a `Money` instance
+cannot be negative. Instead, to represent for instance a negative balance on an account,
+this library exposes an `Overdraft` class that is used as return type of `Money.__sub__`
+when the computed value would have been negative.
+
+Because negative values are encoded as its own type in this way, situations where
+negative values can result from arithmetic but aren't logically expected, such as for
+the price of an item in a store, can be discovered with a static type checker.
 
 #### Type-safe comparison
 
