@@ -18,11 +18,21 @@ means that normalization of values happen at instantiation time.
 
 #### Safe division
 
-In real life we cannot split the subunit of a currency, so with our abstractions of
-money we shouldn't be able to do that either. Therefor instead of returning a value with
-lost precision, the implementation of division for `Money` returns a tuple of new
-instances with the value split up as equal as possible.
+In real life we cannot split the subunit of a currency, and so for our abstractions to
+safely reflect reality, we shouldn't be able to do that in code either. Therefor instead
+of defining division to return a value with precision loss, the implementation of
+division for `Money` returns a tuple of new instances with the value split up as even as
+possible.
+
+```pycon
+>>> Money("0.11", SEK) / 3
+(Money('0.04', SEK), Money('0.04', SEK), Money('0.03', SEK))
+```
 
 #### Money fractions
+
+...
+
+#### Debt
 
 ...
