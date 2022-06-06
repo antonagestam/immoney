@@ -12,9 +12,11 @@ from decimal import ROUND_UP
 from decimal import Decimal
 from fractions import Fraction
 from functools import cached_property
-from typing import Annotated
+from typing import Any
+from typing import ClassVar
 from typing import Final
 from typing import Generic
+from typing import NoReturn
 from typing import TypeVar
 from typing import overload
 
@@ -30,14 +32,22 @@ CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 # TODO: Make immutable
 @abstractattrs
 class Currency(abc.ABC):
-    code: Annotated[str, Abstract]
-    subunit: Annotated[int, Abstract]
+    code: ClassVar[Abstract[str]]
+    subunit: ClassVar[Abstract[int]]
 
     def __str__(self) -> str:
         return self.code
 
     def __call__(self: CurrencySelf, value: Decimal | int | str) -> Money[CurrencySelf]:
         return Money(value, self)
+
+    # Using NoReturn makes mypy give a type error for assignment to attributes (because
+    # NoReturn is the bottom type).
+    # TODO: Switch to typing_extensions.Never once available.
+    def __setattr__(self, key: str, value: NoReturn) -> None:
+        raise AttributeError(
+            f"Currency instances are immutable, cannot write to attribute {key!r}"
+        )
 
     @cached_property
     def decimal_exponent(self) -> Decimal:
@@ -69,7 +79,7 @@ class Currency(abc.ABC):
 
 
 C = TypeVar("C", bound=Currency)
-MoneySelf = TypeVar("MoneySelf", bound="Money")
+MoneySelf = TypeVar("MoneySelf", bound="Money[Any]")
 
 
 # TODO: Make immutable

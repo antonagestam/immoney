@@ -17,8 +17,17 @@ SEK: Final = SEKType()
 
 @final
 class NOKType(Currency):
-    code = "SEK"
+    code = "NOK"
     subunit = 100
 
 
 NOK: Final = NOKType()
+
+
+@final
+class EURType(Currency):
+    code = "EUR"
+    subunit = 100
+
+
+EUR: Final = EURType()

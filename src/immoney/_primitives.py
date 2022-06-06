@@ -6,7 +6,7 @@ from phantom import Phantom
 from phantom.predicates.numeric import non_negative
 
 
-class PositiveDecimal(Decimal, Phantom, predicate=non_negative):
+class PositiveDecimal(Decimal, Phantom[Decimal], predicate=non_negative):
     @classmethod
     def parse(cls, instance: object) -> PositiveDecimal:
         return super().parse(

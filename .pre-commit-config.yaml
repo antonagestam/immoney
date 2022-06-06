@@ -60,10 +60,13 @@ repos:
     rev: "v0.942"
     hooks:
       - id: mypy
+        args: ["--strict"]
         additional_dependencies:
           - pytest
           - types-setuptools
           - phantom-types
+          - abcattrs
+          - typing-extensions
   - repo: https://github.com/mgedmin/check-manifest
     rev: "0.48"
     hooks:

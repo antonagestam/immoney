@@ -1,10 +1,13 @@
 from decimal import Decimal
 from fractions import Fraction
 
+import pytest
+
 from immoney import Money
 from immoney import Overdraft
 from immoney import Round
 from immoney import SubunitFraction
+from immoney.currencies import NOK
 from immoney.currencies import SEK
 
 
@@ -37,6 +40,13 @@ def test_embryo_of_a_suite():
     # m + m
 
     assert m - 2 * m == Overdraft(m)
+
+
+def test_convenience():
+    assert NOK(123) == Money(123, NOK)
+    assert SEK("23.50") == Money("23.50", SEK)
+    assert NOK.zero == Money("0.00", NOK)
+    assert SEK.zero == Money("0.00", SEK)
 
 
 def test_random_comparisons():
@@ -95,3 +105,17 @@ def test_subtraction():
 
     growing_overdraft = larger_overdraft + Overdraft(SEK(10000))
     assert growing_overdraft == Overdraft(SEK(11000))
+
+
+def test_currency_immutable():
+    with pytest.raises(AttributeError):
+        # TODO: Test this type error
+        SEK.foo = "bar"  # type: ignore[assignment]
+    with pytest.raises(AttributeError):
+        # TODO: Test this type error
+        SEK.code = "bar"  # type: ignore[misc]
+    with pytest.raises(AttributeError):
+        # TODO: Test this type error
+        SEK.subunit = 1000  # type: ignore[misc]
+    assert SEK.code == "SEK"
+    assert SEK.subunit == 100
