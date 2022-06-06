@@ -1,40 +1,37 @@
 from __future__ import annotations
 
-import enum
-import math
 from decimal import ROUND_DOWN
-from decimal import Decimal
 from fractions import Fraction
-from functools import cached_property
 from itertools import chain
-from typing import Final
 from typing import Generic
 from typing import Literal
-from typing import TypeVar
 from typing import overload
 
-from ._types import PositiveDecimal
+import math
+from decimal import Decimal
+from functools import cached_property
+from typing import TypeVar, Final, Annotated
+
+from ._primitives import PositiveDecimal
 from .errors import MoneyParseError
+from abcattrs import Abstract, abstractattrs
+import abc
+
 
 CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 
 
-class Currency(str, enum.Enum):
-    code: str
-    subunit: int
-
-    SEK = "SEK", 100
-    NOK = "NOK", 100
-
-    def __new__(cls, code: str, subunit: int) -> Currency:
-        obj = str.__new__(cls, code)
-        obj._value_ = code
-        obj.code = code
-        obj.subunit = subunit
-        return obj
+# TODO: Make immutable
+@abstractattrs
+class Currency(abc.ABC):
+    code: Annotated[str, Abstract]
+    subunit: Annotated[int, Abstract]
 
     def __str__(self) -> str:
         return self.code
+
+    def __call__(self: CurrencySelf, value: Decimal | int | str) -> Money[CurrencySelf]:
+        ...
 
     @cached_property
     def decimal_exponent(self) -> Decimal:
@@ -69,6 +66,7 @@ C = TypeVar("C", bound=Currency)
 MoneySelf = TypeVar("MoneySelf", bound="Money")
 
 
+# TODO: Make immutable
 class Money(Generic[C]):
     __slots__ = ("value", "currency", "__weakref__")
 
@@ -77,7 +75,7 @@ class Money(Generic[C]):
         self.currency: Final = currency
 
     def __repr__(self) -> str:
-        return f"Money({self.value}, {self.currency})"
+        return f"{type(self).__qualname__}({str(self.value)!r}, {self.currency})"
 
     @overload
     def __eq__(self, other: Literal[0]) -> bool:
@@ -108,32 +106,50 @@ class Money(Generic[C]):
             return Money(self.value + other.value, self.currency)
         return NotImplemented
 
+    # TODO: Handle negative results with a Debt type.
+    def __sub__(self: Money[C], other: Money[C]) -> Money[C] | Debt[C]:
+        if isinstance(other, Money) and self.currency == other.currency:
+            value = self.value - other.value
+            return (
+                Money(value, self.currency)
+                if value >= 0 else
+                Debt(Money(-value, self.currency))
+            )
+        return NotImplemented
+
+    # TODO: Support precision-lossy multiplication with floats?
+    def __mul__(self: Money[C], other: int) -> Money[C]:
+        if isinstance(other, int):
+            return Money(self.value * other, self.currency)
+        return NotImplemented
+
+    def __rmul__(self: Money[C], other: int) -> Money[C]:
+        return self.__mul__(other)
+
     def __truediv__(self: Money[C], other: object) -> tuple[Money[C], ...]:
         """
         Divides the original value over the numerator and returns a tuple of new
         Money instances where the original value is spread as evenly as possible. The
         sum of the returned values will always equal the orignal value.
 
-        >>> Money(3, "SEK") / 3
-        (Money("1.00", "SEK"), Money("1.00", "SEK"), Money("1.00", "SEK"))
-        >>> Money(3, "SEK") / 2
-        (Money("1.50", "SEK"), Money("1.50", "SEK"))
-        >>> Money("0.03", "SEK") / 2
-        (Money("0.02", "SEK"), Money("0.01", "SEK"))
+        >>> from immoney.currencies import SEK
+        >>> Money(2, SEK) / 2
+        (Money('1.00', SEK), Money('1.00', SEK))
+        >>> Money(3, SEK) / 2
+        (Money('1.50', SEK), Money('1.50', SEK))
+        >>> Money("0.03", SEK) / 2
+        (Money('0.02', SEK), Money('0.01', SEK))
         """
         if not isinstance(other, int):
             return NotImplemented
         under = self.floored(self.value / other, self.currency)
         under_subunit = under.as_subunit()
-        # TODO: Better name
-        overflow = self.as_subunit() - under_subunit * other
+        remainder = self.as_subunit() - under_subunit * other
         over = Money[C].from_subunit(under_subunit + 1, self.currency)
 
-        return tuple(
-            chain(
-                (over for _ in range(overflow)),
-                (under for _ in range(other - overflow)),
-            )
+        return (
+            *(over for _ in range(remainder)),
+            *(under for _ in range(other - remainder)),
         )
 
     def __floordiv__(self, other: object) -> MoneyFraction[C]:
@@ -152,11 +168,12 @@ class Money(Generic[C]):
     # This needs HKT to allow typing to work properly for subclasses of Money.
     def floored(cls, value: Decimal, currency: C) -> Money[C]:
         return cls(
-            value.quantize(currency.decimal_exponent, rounding=ROUND_DOWN),
-            currency,
+            value=value.quantize(currency.decimal_exponent, rounding=ROUND_DOWN),
+            currency=currency,
         )
 
 
+# TODO: Make immutable
 class MoneyFraction(Generic[C]):
     __slots__ = ("value", "currency", "__weakref__")
 
@@ -167,3 +184,16 @@ class MoneyFraction(Generic[C]):
     @classmethod
     def from_money(cls, money: Money[C], denominator: int) -> MoneyFraction[C]:
         return MoneyFraction(Fraction(money.as_subunit(), denominator), money.currency)
+
+
+# TODO: Make immutable
+class Debt(Generic[C]):
+    __slots__ = ("money", "__weakref__")
+
+    def __init__(self, money: Money[C]) -> None:
+        self.money: Final = money
+
+    def __eq__(self: Debt[C], other: Debt[C]) -> bool:
+        if isinstance(other, Debt) and other.money.currency == self.money.currency:
+            return self.money.value == other.money.value
+        return NotImplemented
