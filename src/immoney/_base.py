@@ -13,10 +13,8 @@ from typing import Literal
 from typing import TypeVar
 from typing import overload
 
-from .errors import MoneyParseError
-
 from ._types import PositiveDecimal
-
+from .errors import MoneyParseError
 
 CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 
@@ -53,7 +51,9 @@ class Currency(str, enum.Enum):
         try:
             positive = PositiveDecimal.parse(quantized)
         except (TypeError, ValueError) as e:
-            raise MoneyParseError("Failed to interpret value as non-negative decimal") from e
+            raise MoneyParseError(
+                "Failed to interpret value as non-negative decimal"
+            ) from e
 
         if positive != quantized:
             raise MoneyParseError(
