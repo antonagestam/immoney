@@ -29,7 +29,6 @@ from .errors import MoneyParseError
 CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 
 
-# TODO: Make immutable
 @abstractattrs
 class Currency(abc.ABC):
     code: ClassVar[Abstract[str]]
@@ -59,14 +58,14 @@ class Currency(abc.ABC):
         return Money(0, self)
 
     def normalize_value(self, value: Decimal | int | str) -> PositiveDecimal:
-        quantized = Decimal(value).quantize(self.decimal_exponent)
-
         try:
-            positive = PositiveDecimal.parse(quantized)
-        except (TypeError, ValueError) as e:
+            positive = PositiveDecimal.parse(value)
+        except TypeError as e:
             raise MoneyParseError(
                 "Failed to interpret value as non-negative decimal"
             ) from e
+
+        quantized = positive.quantize(self.decimal_exponent)
 
         if positive != quantized:
             raise MoneyParseError(
@@ -75,7 +74,7 @@ class Currency(abc.ABC):
                 "SubunitFraction."
             )
 
-        return positive
+        return quantized
 
 
 C = TypeVar("C", bound=Currency)
