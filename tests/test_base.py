@@ -2,9 +2,15 @@ from decimal import Decimal
 
 import pytest
 from abcattrs import UndefinedAbstractAttribute
-from immoney import Currency, Money
-from hypothesis import given, example
-from hypothesis.strategies import text, decimals, integers, composite
+from hypothesis import example
+from hypothesis import given
+from hypothesis.strategies import composite
+from hypothesis.strategies import decimals
+from hypothesis.strategies import integers
+from hypothesis.strategies import text
+
+from immoney import Currency
+from immoney import Money
 from immoney.currencies import SEK
 from immoney.errors import MoneyParseError
 
@@ -14,7 +20,11 @@ very_small_decimal = Decimal("0.0000000000000000000000000001")
 
 
 @composite
-def currencies(draw, subunit_values=integers(min_value=1, max_value=100_000_000_000), code_values=text(max_size=3, min_size=3)):
+def currencies(
+    draw,
+    subunit_values=integers(min_value=1, max_value=100_000_000_000),
+    code_values=text(max_size=3, min_size=3),
+):
     class Subclass(Currency):
         subunit = draw(subunit_values)
         code = draw(code_values)
@@ -64,8 +74,7 @@ class TestCurrency:
         instance = Subclass()
 
         assert instance.decimal_exponent == Decimal(
-            "0." +
-            len(str(subunit_value)) * "0"
+            "0." + len(str(subunit_value)) * "0"
         )
 
     def test_zero_returns_cached_instance_of_money_zero(self):
@@ -75,13 +84,14 @@ class TestCurrency:
 
     @given(
         currency=currencies(),
-        value=decimals(min_value=very_small_decimal, allow_nan=False, allow_infinity=False),
+        value=decimals(
+            min_value=very_small_decimal, allow_nan=False, allow_infinity=False
+        ),
     )
-    @example(
-        currency=SEK,
-        value=Decimal("0.01")
-    )
-    def test_normalize_value_raises_for_precision_loss(self, currency: Currency, value: Decimal):
+    @example(currency=SEK, value=Decimal("0.01"))
+    def test_normalize_value_raises_for_precision_loss(
+        self, currency: Currency, value: Decimal
+    ):
         with pytest.raises(MoneyParseError):
             currency.normalize_value(value)
             currency.normalize_value(value + very_small_decimal)
@@ -89,11 +99,13 @@ class TestCurrency:
 
     @given(
         currency=currencies(),
-        value=integers(max_value=-1) | decimals(max_value=Decimal("-0.000001"))
+        value=integers(max_value=-1) | decimals(max_value=Decimal("-0.000001")),
     )
-    def test_normalize_value_raises_for_negative_value(self, currency: Currency, value: object):
+    def test_normalize_value_raises_for_negative_value(
+        self, currency: Currency, value: object
+    ):
         with pytest.raises(MoneyParseError):
-            currency.normalize_value(value)
+            currency.normalize_value(value)  # type: ignore[arg-type]
 
     @given(currencies())
     def test_normalize_value_raises_for_invalid_str(self, currency: Currency):

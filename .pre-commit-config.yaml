@@ -67,6 +67,7 @@ repos:
           - phantom-types==0.16.0
           - abcattrs==0.3.0
           - typing-extensions==4.2.0
+          - hypothesis==6.47.0
   - repo: https://github.com/mgedmin/check-manifest
     rev: "0.48"
     hooks:

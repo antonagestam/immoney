@@ -18,6 +18,7 @@ from typing import Final
 from typing import Generic
 from typing import NoReturn
 from typing import TypeVar
+from typing import cast
 from typing import overload
 
 from abcattrs import Abstract
@@ -65,7 +66,7 @@ class Currency(abc.ABC):
                 "Failed to interpret value as non-negative decimal"
             ) from e
 
-        quantized = positive.quantize(self.decimal_exponent)
+        quantized = cast(PositiveDecimal, positive.quantize(self.decimal_exponent))
 
         if positive != quantized:
             raise MoneyParseError(

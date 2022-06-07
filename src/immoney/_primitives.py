@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import decimal
 from decimal import Decimal
 
 from phantom import Phantom
+from phantom.predicates.boolean import all_of
+from phantom.predicates.boolean import negate
 from phantom.predicates.numeric import non_negative
-from phantom.predicates.boolean import negate, all_of
-import decimal
 
 
 class PositiveDecimal(
@@ -13,9 +14,9 @@ class PositiveDecimal(
     Phantom[Decimal],
     predicate=all_of(
         (
-        negate(Decimal.is_nan),
-        Decimal.is_finite,
-        non_negative,
+            negate(Decimal.is_nan),
+            Decimal.is_finite,
+            non_negative,
         )
     ),
 ):
