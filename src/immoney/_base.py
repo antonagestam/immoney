@@ -25,6 +25,7 @@ from abcattrs import Abstract
 from abcattrs import abstractattrs
 
 from ._primitives import PositiveDecimal
+from .errors import FrozenInstanceError
 from .errors import MoneyParseError
 
 CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
@@ -38,14 +39,20 @@ class Currency(abc.ABC):
     def __str__(self) -> str:
         return self.code
 
+    def __repr__(self) -> str:
+        return f"Currency(code={self.code}, subunit={self.subunit})"
+
     def __call__(self: CurrencySelf, value: Decimal | int | str) -> Money[CurrencySelf]:
         return Money(value, self)
+
+    def __hash__(self) -> int:
+        return hash((self.code, self.subunit))
 
     # Using NoReturn makes mypy give a type error for assignment to attributes (because
     # NoReturn is the bottom type).
     # TODO: Switch to typing_extensions.Never once available.
     def __setattr__(self, key: str, value: NoReturn) -> None:
-        raise AttributeError(
+        raise FrozenInstanceError(
             f"Currency instances are immutable, cannot write to attribute {key!r}"
         )
 
@@ -82,16 +89,30 @@ C = TypeVar("C", bound=Currency)
 MoneySelf = TypeVar("MoneySelf", bound="Money[Any]")
 
 
-# TODO: Make immutable
 class Money(Generic[C]):
     __slots__ = ("value", "currency", "__weakref__")
 
     def __init__(self, value: Decimal | int | str, currency: C) -> None:
-        self.value: Final = PositiveDecimal.parse(value)
+        if not isinstance(currency, Currency):
+            raise TypeError(
+                f"Argument currency of {type(self).__qualname__!r} most be a Currency, "
+                f"got object of type {type(currency)!r}"
+            )
+        self.value: Final = currency.normalize_value(value)
         self.currency: Final = currency
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({str(self.value)!r}, {self.currency})"
+
+    # Using NoReturn makes mypy give a type error for assignment to attributes (because
+    # NoReturn is the bottom type).
+    # TODO: Switch to typing_extensions.Never once available.
+    def __setattr__(self, key: str, value: NoReturn) -> None:
+        if hasattr(self, "currency") and hasattr(self, "value"):
+            raise FrozenInstanceError(
+                f"Currency instances are immutable, cannot write to attribute {key!r}"
+            )
+        super().__setattr__(key, value)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, int) and other == 0:
@@ -184,6 +205,9 @@ class Money(Generic[C]):
             return NotImplemented
         return SubunitFraction.from_money(self, other)
 
+    def __hash__(self) -> int:
+        return hash((self.currency, self.value))
+
     def as_subunit(self) -> int:
         return int(self.currency.subunit * self.value)
 
@@ -218,6 +242,7 @@ class Round(enum.Enum):
 class SubunitFraction(Generic[C]):
     __slots__ = ("value", "currency", "__weakref__")
 
+    # FIXME: Check values at instantiation.
     def __init__(self, value: Fraction, currency: C) -> None:
         self.value: Final = value
         self.currency: Final = currency

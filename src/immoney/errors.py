@@ -1,2 +1,6 @@
 class MoneyParseError(ValueError):
     ...
+
+
+class FrozenInstanceError(AttributeError):
+    ...
