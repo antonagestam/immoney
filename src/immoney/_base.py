@@ -135,11 +135,11 @@ class Money(Generic[C]):
         """
         >>> from immoney.currencies import SEK
         >>> SEK(2) - SEK(1)
-        Money('1', SEK)
+        Money('1.00', SEK)
         >>> SEK(2) - SEK(2)
-        Money('0', SEK)
+        Money('0.00', SEK)
         >>> SEK(2) - SEK(3)
-        Overdraft('1', SEK)
+        Overdraft('1.00', SEK)
         """
         if isinstance(other, Money) and self.currency == other.currency:
             value = self.value - other.value
