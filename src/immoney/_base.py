@@ -212,7 +212,8 @@ class Money(Generic[C]):
         return int(self.currency.subunit * self.value)
 
     @classmethod
-    def from_subunit(cls: type[MoneySelf], value: int, currency: Currency) -> MoneySelf:
+    # This needs HKT to allow typing to work properly for subclasses of Money.
+    def from_subunit(cls, value: int, currency: Currency) -> Money[Currency]:
         return cls(Decimal(value) / currency.subunit, currency)
 
     @classmethod

@@ -239,3 +239,7 @@ class TestMoney:
     @example(SEK(10), NOK(10))
     def test_never_equal_across_currencies(self, a: Money[Any], b: Money[Any]):
         assert a != b
+
+    @given(valid_sek, valid_sek)
+    def test_total_ordering_within_currency(self, a: Money[Any], b: Money[Any]):
+        assert (a > b and b < a) or (a < b and b > a) or (a == b and b == a)
