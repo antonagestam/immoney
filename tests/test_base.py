@@ -241,11 +241,13 @@ class TestMoney:
         assert a != b
 
     @given(valid_sek, valid_sek)
-    @example(SEK(0), SEK(0))
-    @example(SEK(1), SEK(1))
-    @example(SEK(1), SEK(0))
-    @example(SEK(0), SEK(1))
-    def test_total_ordering_within_currency(self, a: Money[Any], b: Money[Any]):
+    @example(0, 0)
+    @example(1, 1)
+    @example(1, 0)
+    @example(0, 1)
+    def test_total_ordering_within_currency(self, x: Decimal | int, y: Decimal | int):
+        a = SEK(x)
+        b = SEK(y)
         assert (a > b and b < a) or (a < b and b > a) or (a == b and b == a)
         assert (a >= b and b <= a) or (a <= b and b >= a)
 
