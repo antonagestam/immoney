@@ -95,7 +95,7 @@ class Money(Generic[C]):
     def __init__(self, value: Decimal | int | str, currency: C) -> None:
         if not isinstance(currency, Currency):
             raise TypeError(
-                f"Argument currency of {type(self).__qualname__!r} most be a Currency, "
+                f"Argument currency of {type(self).__qualname__!r} must be a Currency, "
                 f"got object of type {type(currency)!r}"
             )
         self.value: Final = currency.normalize_value(value)

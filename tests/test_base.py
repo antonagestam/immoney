@@ -157,12 +157,17 @@ class TestMoney:
     @example(Decimal("1.01"))
     @example(Decimal("1.010000"))
     def test_instantiation_normalizes_value(self, value: Decimal):
-        instantiated = SEK(value).value
-        assert instantiated.as_tuple().exponent == -2
+        instantiated = SEK(value)
+        assert instantiated.value == value
+        assert instantiated.value.as_tuple().exponent == -2
 
     def test_cannot_instantiate_subunit_fraction(self):
         with pytest.raises(MoneyParseError):
             SEK(Decimal("1.001"))
+
+    def test_raises_type_error_when_instantiated_with_non_currency(self):
+        with pytest.raises(TypeError):
+            Money("2.00", "SEK")  # type: ignore[type-var]
 
     @given(money=monies(), name=text(), value=valid_sek | text())
     @example(SEK(23), "value", Decimal("123"))
@@ -173,5 +178,23 @@ class TestMoney:
             setattr(money, name, value)
         assert getattr(money, name, None) == initial
 
-    def test_hashable(self):
-        ...
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        (
+            (SEK("523.12"), "Money('523.12', SEK)"),
+            (SEK("52"), "Money('52.00', SEK)"),
+            (SEK("0"), "Money('0.00', SEK)"),
+            (NOK(8000), "Money('8000.00', NOK)"),
+        ),
+    )
+    def test_repr(self, value: Money, expected: str):
+        assert expected == repr(value)
+
+    def test_hash(self):
+        a = SEK(23)
+        b = NOK(23)
+        assert hash(a) != hash(b)
+        mapped = {a: "a", b: "b"}
+        assert mapped[a] == "a"
+        assert mapped[b] == "b"
+        assert {a, a, b} == {a, b, b}
