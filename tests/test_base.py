@@ -187,7 +187,7 @@ class TestMoney:
             (NOK(8000), "Money('8000.00', NOK)"),
         ),
     )
-    def test_repr(self, value: Money, expected: str):
+    def test_repr(self, value: Money[Any], expected: str):
         assert expected == repr(value)
 
     def test_hash(self):
@@ -198,3 +198,4 @@ class TestMoney:
         assert mapped[a] == "a"
         assert mapped[b] == "b"
         assert {a, a, b} == {a, b, b}
+        assert hash(SEK(13)) == hash(SEK(13))
