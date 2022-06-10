@@ -243,8 +243,8 @@ class SubunitFraction(Generic[C]):
     __slots__ = ("value", "currency", "__weakref__")
 
     # FIXME: Check values at instantiation.
-    def __init__(self, value: Fraction, currency: C) -> None:
-        self.value: Final = value
+    def __init__(self, value: Fraction | Decimal, currency: C) -> None:
+        self.value: Final = Fraction(value)
         self.currency: Final = currency
 
     def __repr__(self) -> str:

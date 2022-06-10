@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from decimal import Decimal
 from fractions import Fraction
 from typing import Any
@@ -199,3 +201,41 @@ class TestMoney:
         assert mapped[b] == "b"
         assert {a, a, b} == {a, b, b}
         assert hash(SEK(13)) == hash(SEK(13))
+
+    def test_can_check_equality_with_zero(self):
+        assert SEK(0) == 0
+        assert 0 == SEK(0)
+        assert SEK("0.01") != 0
+        assert 0 != SEK("0.01")
+        assert NOK(0) == 0
+        assert 0 == NOK(0)
+        assert NOK("0.01") != 0
+        assert 0 != NOK("0.01")
+
+    @given(value=monies(), number=integers(min_value=1))
+    @example(SEK(1), 1)
+    @example(SEK("0.1"), 1)
+    @example(SEK("0.01"), 1)
+    def test_cannot_check_equality_with_non_zero(self, value: Money[Any], number: int):
+        assert value != number
+
+    @given(value=valid_sek)
+    def test_can_check_equality_with_instance(self, value: Decimal):
+        instance = SEK(value)
+        assert instance == SEK(value)
+        next_plus = Money.from_subunit(instance.as_subunit() + 1, SEK)
+        assert next_plus != value
+        assert value != next_plus
+
+        other_currency = NOK(value)
+        assert other_currency != instance
+        assert instance != other_currency
+        assert other_currency != next_plus
+        assert next_plus != other_currency
+
+    @given(a=monies(), b=monies())
+    @example(NOK(0), SEK(0))
+    @example(SEK(0), NOK(0))
+    @example(SEK(10), NOK(10))
+    def test_never_equal_across_currencies(self, a: Money[Any], b: Money[Any]):
+        assert a != b
