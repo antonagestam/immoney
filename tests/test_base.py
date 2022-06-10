@@ -241,5 +241,35 @@ class TestMoney:
         assert a != b
 
     @given(valid_sek, valid_sek)
+    @example(SEK(0), SEK(0))
+    @example(SEK(1), SEK(1))
+    @example(SEK(1), SEK(0))
+    @example(SEK(0), SEK(1))
     def test_total_ordering_within_currency(self, a: Money[Any], b: Money[Any]):
         assert (a > b and b < a) or (a < b and b > a) or (a == b and b == a)
+        assert (a >= b and b <= a) or (a <= b and b >= a)
+
+    @given(a=monies(), b=monies())
+    @example(NOK(0), SEK(0))
+    @example(SEK(1), NOK(2))
+    def test_raises_type_error_for_ordering_across_currencies(
+        self,
+        a: Money[Any],
+        b: Money[Any],
+    ):
+        with pytest.raises(TypeError):
+            a > b
+        with pytest.raises(TypeError):
+            a >= b
+        with pytest.raises(TypeError):
+            a < b
+        with pytest.raises(TypeError):
+            a <= b
+        with pytest.raises(TypeError):
+            b > a
+        with pytest.raises(TypeError):
+            b >= a
+        with pytest.raises(TypeError):
+            b < a
+        with pytest.raises(TypeError):
+            b <= a

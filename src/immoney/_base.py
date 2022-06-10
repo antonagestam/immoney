@@ -117,13 +117,28 @@ class Money(Generic[C]):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, int) and other == 0:
             return self.value == other
-        if isinstance(other, Money) and self.currency == other.currency:
-            return self.value == other.value
+        if isinstance(other, Money):
+            return self.currency == other.currency and self.value == other.value
         return NotImplemented
 
     def __gt__(self: Money[C], other: Money[C]) -> bool:
         if isinstance(other, Money) and self.currency == other.currency:
             return self.value > other.value
+        return NotImplemented
+
+    def __ge__(self: Money[C], other: Money[C]) -> bool:
+        if isinstance(other, Money) and self.currency == other.currency:
+            return self.value >= other.value
+        return NotImplemented
+
+    def __lt__(self: Money[C], other: Money[C]) -> bool:
+        if isinstance(other, Money) and self.currency == other.currency:
+            return self.value < other.value
+        return NotImplemented
+
+    def __le__(self: Money[C], other: Money[C]) -> bool:
+        if isinstance(other, Money) and self.currency == other.currency:
+            return self.value <= other.value
         return NotImplemented
 
     def __add__(self: Money[C], other: Money[C]) -> Money[C]:
