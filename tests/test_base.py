@@ -223,7 +223,7 @@ class TestMoney:
     def test_can_check_equality_with_instance(self, value: Decimal):
         instance = SEK(value)
         assert instance == SEK(value)
-        next_plus = Money.from_subunit(instance.as_subunit() + 1, SEK)
+        next_plus = SEK.from_subunit(instance.as_subunit() + 1)
         assert next_plus != value
         assert value != next_plus
 

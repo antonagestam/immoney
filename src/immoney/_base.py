@@ -84,6 +84,12 @@ class Currency(abc.ABC):
 
         return quantized
 
+    def from_subunit(
+        self: CurrencySelf,
+        value: Decimal | int | str,
+    ) -> Money[CurrencySelf]:
+        return Money.from_subunit(value, self)
+
 
 C = TypeVar("C", bound=Currency)
 MoneySelf = TypeVar("MoneySelf", bound="Money[Any]")
@@ -103,6 +109,9 @@ class Money(Generic[C]):
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({str(self.value)!r}, {self.currency})"
+
+    def __hash__(self) -> int:
+        return hash((self.currency, self.value))
 
     # Using NoReturn makes mypy give a type error for assignment to attributes (because
     # NoReturn is the bottom type).
@@ -219,9 +228,6 @@ class Money(Generic[C]):
         if not isinstance(other, int):
             return NotImplemented
         return SubunitFraction.from_money(self, other)
-
-    def __hash__(self) -> int:
-        return hash((self.currency, self.value))
 
     def as_subunit(self) -> int:
         return int(self.currency.subunit * self.value)
