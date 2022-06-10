@@ -258,18 +258,18 @@ class TestMoney:
         b: Money[Any],
     ):
         with pytest.raises(TypeError):
-            a > b
+            a > b  # noqa: B015
         with pytest.raises(TypeError):
-            a >= b
+            a >= b  # noqa: B015
         with pytest.raises(TypeError):
-            a < b
+            a < b  # noqa: B015
         with pytest.raises(TypeError):
-            a <= b
+            a <= b  # noqa: B015
         with pytest.raises(TypeError):
-            b > a
+            b > a  # noqa: B015
         with pytest.raises(TypeError):
-            b >= a
+            b >= a  # noqa: B015
         with pytest.raises(TypeError):
-            b < a
+            b < a  # noqa: B015
         with pytest.raises(TypeError):
-            b <= a
+            b <= a  # noqa: B015
