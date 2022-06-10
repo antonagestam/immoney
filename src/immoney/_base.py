@@ -193,7 +193,7 @@ class Money(Generic[C]):
         under = self.floored(self.value / other, self.currency)
         under_subunit = under.as_subunit()
         remainder = self.as_subunit() - under_subunit * other
-        over = Money[C].from_subunit(under_subunit + 1, self.currency)
+        over = Money.from_subunit(under_subunit + 1, self.currency)
 
         return (
             *(over for _ in range(remainder)),
@@ -213,7 +213,7 @@ class Money(Generic[C]):
 
     @classmethod
     # This needs HKT to allow typing to work properly for subclasses of Money.
-    def from_subunit(cls, value: int, currency: Currency) -> Money[Currency]:
+    def from_subunit(cls, value: int, currency: C) -> Money[C]:
         return cls(Decimal(value) / currency.subunit, currency)
 
     @classmethod
