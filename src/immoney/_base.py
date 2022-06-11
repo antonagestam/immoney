@@ -148,6 +148,11 @@ class Money(Generic[C]):
             return self.value <= other.value
         return NotImplemented
 
+    def __iadd__(self: Money[C], other: Money[C]) -> Money[C]:
+        if isinstance(other, Money) and self.currency == other.currency:
+            return Money(self.value + other.value, self.currency)
+        return NotImplemented
+
     def __add__(self: Money[C], other: Money[C]) -> Money[C]:
         if isinstance(other, Money) and self.currency == other.currency:
             return Money(self.value + other.value, self.currency)
@@ -171,6 +176,12 @@ class Money(Generic[C]):
                 else Overdraft(Money(-value, self.currency))
             )
         return NotImplemented
+
+    def __pos__(self: MoneySelf) -> MoneySelf:
+        return self
+
+    def __neg__(self: Money[C]) -> Overdraft[C]:
+        return Overdraft(self)
 
     # TODO: Support precision-lossy multiplication with floats?
     # TODO: Can the allowed multiplication types be reflected properly here?

@@ -15,6 +15,7 @@ from hypothesis.strategies import text
 
 from immoney import Currency
 from immoney import Money
+from immoney import Overdraft
 from immoney import Round
 from immoney import SubunitFraction
 from immoney.currencies import NOK
@@ -317,6 +318,22 @@ class TestMoney:
 
     @given(sums_to_valid_sek())
     @example((Decimal(0), Decimal(0)))
+    def test_iadd(self, xy: tuple[Decimal, Decimal]):
+        x, y = xy
+        a = SEK(x)
+        b = SEK(y)
+        c = a
+        c += b
+        d = b
+        d += a
+        assert c.value == d.value == (x + y)
+
+    @given(monies())
+    def test_pos(self, a: Money[Any]):
+        assert +a == a
+
+    @given(sums_to_valid_sek())
+    @example((Decimal(0), Decimal(0)))
     def test_sub(self, xy: tuple[Decimal, Decimal]):
         x, y = sorted(xy, reverse=True)
         a = SEK(x)
@@ -326,11 +343,15 @@ class TestMoney:
             assert a - b == b - a == 0
             return
 
-        assert (
-            (a - b).value  # type: ignore[union-attr]
-            == (b - a).money.value  # type: ignore[union-attr]
-            == (x - y)
-        )
+        expected_sum = x - y
+
+        pos = a - b
+        assert isinstance(pos, Money)
+        assert pos.value == expected_sum
+
+        neg = b - a
+        assert isinstance(neg, Overdraft)
+        assert neg.money.value == expected_sum
 
     @given(a=monies(), b=monies())
     @example(NOK(0), SEK(0))
@@ -344,3 +365,9 @@ class TestMoney:
             a - b
         with pytest.raises(TypeError):
             b - a
+
+    @given(monies())
+    def test_neg(self, a: Money[Any]):
+        negged = -a
+        assert isinstance(negged, Overdraft)
+        assert +a == a
