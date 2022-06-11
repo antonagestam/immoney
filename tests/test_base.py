@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from decimal import InvalidOperation
 from fractions import Fraction
 from typing import Any
 
@@ -22,15 +23,33 @@ from immoney.currencies import SEK
 from immoney.errors import FrozenInstanceError
 from immoney.errors import MoneyParseError
 
+max_valid_sek = 100_000_000_000_000_000_000_000_000 - 1
 valid_sek = decimals(
     min_value=0,
-    max_value=100_000_000_000_000_000_000_000_000 - 1,
+    max_value=max_valid_sek,
     places=2,
     allow_nan=False,
     allow_infinity=False,
 )
 valid_subunit_value = integers(min_value=1)
 very_small_decimal = Decimal("0.0000000000000000000000000001")
+
+
+@composite
+def sums_to_valid_sek(
+    draw,
+    first_pick=valid_sek,
+):
+    a = draw(first_pick)
+    return a, draw(
+        decimals(
+            min_value=0,
+            max_value=max_valid_sek - a,
+            places=2,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
 
 @composite
@@ -275,3 +294,24 @@ class TestMoney:
             b < a  # noqa: B015
         with pytest.raises(TypeError):
             b <= a  # noqa: B015
+
+    @given(sums_to_valid_sek())
+    @example((Decimal(0), Decimal(0)))
+    def test_add(self, xy: tuple[Decimal, Decimal]):
+        x, y = xy
+        a = SEK(x)
+        b = SEK(y)
+        assert (b + a).value == (a + b).value == (x + y)
+
+    @given(a=monies(), b=monies())
+    @example(NOK(0), SEK(0))
+    @example(SEK(1), NOK(2))
+    def test_raises_type_error_for_addition_across_currencies(
+        self,
+        a: Money[Any],
+        b: Money[Any],
+    ):
+        with pytest.raises(TypeError):
+            a + b
+        with pytest.raises(TypeError):
+            b + a
