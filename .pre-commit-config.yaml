@@ -61,8 +61,8 @@ repos:
     hooks:
       - id: mypy
         args: ["--strict"]
+        pass_filenames: false
         additional_dependencies:
-          - .[test]
           - pytest==7.1.2
           - types-setuptools==57.4.17
           - phantom-types==0.16.0
