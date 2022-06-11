@@ -318,19 +318,19 @@ class TestMoney:
     @given(sums_to_valid_sek())
     @example((Decimal(0), Decimal(0)))
     def test_sub(self, xy: tuple[Decimal, Decimal]):
-        x, y = xy
+        x, y = sorted(xy, reverse=True)
         a = SEK(x)
         b = SEK(y)
-        subbed = x - y
-        if subbed == 0:
-            assert (a - b).value == subbed
-            assert (b - a).value == subbed
-        elif subbed >= 0:
-            assert (a - b).value == subbed
-            assert (b - a).money.value == subbed
-        else:
-            assert (a - b).money.value == -subbed
-            assert (b - a).value == -subbed
+
+        if a == b:
+            assert a - b == b - a == 0
+            return
+
+        assert (
+            (a - b).value  # type: ignore[union-attr]
+            == (b - a).money.value  # type: ignore[union-attr]
+            == (x - y)
+        )
 
     @given(a=monies(), b=monies())
     @example(NOK(0), SEK(0))
