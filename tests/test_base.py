@@ -314,3 +314,33 @@ class TestMoney:
             a + b
         with pytest.raises(TypeError):
             b + a
+
+    @given(sums_to_valid_sek())
+    @example((Decimal(0), Decimal(0)))
+    def test_sub(self, xy: tuple[Decimal, Decimal]):
+        x, y = xy
+        a = SEK(x)
+        b = SEK(y)
+        subbed = x - y
+        if subbed == 0:
+            assert (a - b).value == subbed
+            assert (b - a).value == subbed
+        elif subbed >= 0:
+            assert (a - b).value == subbed
+            assert (b - a).money.value == subbed
+        else:
+            assert (a - b).money.value == -subbed
+            assert (b - a).value == -subbed
+
+    @given(a=monies(), b=monies())
+    @example(NOK(0), SEK(0))
+    @example(SEK(1), NOK(2))
+    def test_raises_type_error_for_subtraction_across_currencies(
+        self,
+        a: Money[Any],
+        b: Money[Any],
+    ):
+        with pytest.raises(TypeError):
+            a - b
+        with pytest.raises(TypeError):
+            b - a

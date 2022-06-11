@@ -308,6 +308,9 @@ class Overdraft(Generic[C]):
             f"({str(self.money.value)!r}, {self.money.currency})"
         )
 
+    def __hash__(self) -> int:
+        return hash((type(self), self.money))
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Overdraft) and other.money.currency == self.money.currency:
             return self.money.value == other.money.value
