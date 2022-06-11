@@ -328,6 +328,19 @@ class TestMoney:
         d += a
         assert c.value == d.value == (x + y)
 
+    @given(a=monies(), b=monies())
+    @example(NOK(0), SEK(0))
+    @example(SEK(1), NOK(2))
+    def test_raises_type_error_for_inline_addition_across_currencies(
+        self,
+        a: Money[Any],
+        b: Money[Any],
+    ):
+        with pytest.raises(TypeError):
+            a += b
+        with pytest.raises(TypeError):
+            b += a
+
     @given(monies())
     def test_pos(self, a: Money[Any]):
         assert +a == a
