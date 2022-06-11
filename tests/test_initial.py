@@ -104,17 +104,3 @@ def test_subtraction():
 
     growing_overdraft = larger_overdraft + Overdraft(SEK(10000))
     assert growing_overdraft == Overdraft(SEK(11000))
-
-
-def test_currency_immutable():
-    with pytest.raises(AttributeError):
-        # TODO: Test this type error
-        SEK.foo = "bar"  # type: ignore[assignment]
-    with pytest.raises(AttributeError):
-        # TODO: Test this type error
-        SEK.code = "bar"  # type: ignore[misc]
-    with pytest.raises(AttributeError):
-        # TODO: Test this type error
-        SEK.subunit = 1000  # type: ignore[misc]
-    assert SEK.code == "SEK"
-    assert SEK.subunit == 100
