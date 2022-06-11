@@ -384,3 +384,14 @@ class TestMoney:
         negged = -a
         assert isinstance(negged, Overdraft)
         assert +a == a
+
+    @given(valid_sek, valid_sek)
+    def test_raises_type_error_for_multiplication_between_instances(
+        self, x: Decimal, y: Decimal
+    ):
+        a = SEK(x)
+        b = SEK(y)
+        with pytest.raises(TypeError):
+            a * b  # type: ignore[operator]
+        with pytest.raises(TypeError):
+            b * a  # type: ignore[operator]
