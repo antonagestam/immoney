@@ -62,6 +62,7 @@ repos:
       - id: mypy
         args: ["--strict"]
         additional_dependencies:
+          - .[test]
           - pytest==7.1.2
           - types-setuptools==57.4.17
           - phantom-types==0.16.0

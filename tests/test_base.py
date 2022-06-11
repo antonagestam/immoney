@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from decimal import InvalidOperation
 from fractions import Fraction
 from typing import Any
 
