@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import decimal
 from decimal import Decimal
+from typing import TypeAlias
 
 from phantom import Phantom
 from phantom.predicates.boolean import all_of
@@ -28,3 +29,6 @@ class PositiveDecimal(
             except decimal.InvalidOperation:
                 pass
         return super().parse(instance)
+
+
+ParsableMoneyValue: TypeAlias = int | str | Decimal

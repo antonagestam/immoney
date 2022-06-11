@@ -24,9 +24,10 @@ from typing import overload
 from abcattrs import Abstract
 from abcattrs import abstractattrs
 
-from ._primitives import PositiveDecimal
 from .errors import FrozenInstanceError
 from .errors import MoneyParseError
+from .types import ParsableMoneyValue
+from .types import PositiveDecimal
 
 CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 
@@ -84,10 +85,7 @@ class Currency(abc.ABC):
 
         return quantized
 
-    def from_subunit(
-        self: CurrencySelf,
-        value: Decimal | int | str,
-    ) -> Money[CurrencySelf]:
+    def from_subunit(self: CurrencySelf, value: int) -> Money[CurrencySelf]:
         return Money.from_subunit(value, self)
 
 
@@ -98,7 +96,7 @@ MoneySelf = TypeVar("MoneySelf", bound="Money[Any]")
 class Money(Generic[C]):
     __slots__ = ("value", "currency", "__weakref__")
 
-    def __init__(self, value: Decimal | int | str, currency: C) -> None:
+    def __init__(self, value: ParsableMoneyValue, currency: C) -> None:
         if not isinstance(currency, Currency):
             raise TypeError(
                 f"Argument currency of {type(self).__qualname__!r} must be a Currency, "
@@ -285,6 +283,9 @@ class SubunitFraction(Generic[C]):
             Fraction(money.as_subunit(), denominator), money.currency
         )
 
+    # TODO: Test what happens when self.value is negative? Should it be allowed to be
+    #  negative, or is it better to allow Overdraft to wrap both Money and
+    #  SubunitFraction?
     def round(self, rounding: Round) -> Money[C]:
         main_unit = Decimal(float(self.value / self.currency.subunit))
         quantized = main_unit.quantize(
