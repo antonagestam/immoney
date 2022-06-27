@@ -52,6 +52,18 @@ cannot be negative. Instead, to represent for instance a negative balance on an 
 this library exposes an `Overdraft` class that is used as return type of `Money.__sub__`
 when the computed value would have been negative.
 
+```pycon
+>>> balance = SEK(5)
+>>> balance - SEK(4)
+Money('1.00', SEK)
+>>> balance - SEK(5)
+Money('0.00', SEK)
+>>> balance - SEK("6.50")
+Overdraft('1.50', SEK)
+>>> balance - SEK("6.50") + SEK("1.50")
+Money('0.00', SEK)
+```
+
 Because negative values are encoded as its own type in this way, situations where
 negative values can result from arithmetic but aren't logically expected, such as for
 the price of an item in a store, can be discovered with a static type checker.
