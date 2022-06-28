@@ -5,7 +5,6 @@ from decimal import Decimal
 from decimal import InvalidOperation
 from fractions import Fraction
 from typing import Any
-from typing import get_args
 
 import pytest
 from abcattrs import UndefinedAbstractAttribute
@@ -25,7 +24,6 @@ from immoney.currencies import NOK
 from immoney.currencies import SEK
 from immoney.errors import FrozenInstanceError
 from immoney.errors import MoneyParseError
-from immoney.types import PowerOf10
 
 max_valid_sek = 100_000_000_000_000_000_000_000_000 - 1
 valid_sek = decimals(
@@ -62,7 +60,7 @@ def currencies(
     code_values=text(max_size=3, min_size=3),
 ):
     class Subclass(Currency):
-        subunit = random.choice(get_args(PowerOf10))
+        subunit = random.choice((1, 10, 100, 1_000, 10_000, 100_000, 1_000_000))
         code = draw(code_values)
 
     return Subclass()
@@ -459,3 +457,8 @@ class TestMoney:
             a * b  # type: ignore[operator]
         with pytest.raises(TypeError):
             b * a  # type: ignore[operator]
+
+    # test __mul__
+    # test __rmul__? Why?
+    # truediv
+    # floordiv

@@ -33,5 +33,3 @@ class PositiveDecimal(
 
 
 ParsableMoneyValue: TypeAlias = int | str | Decimal
-
-PowerOf10 = Literal[1, 10, 100, 1_000, 10_000, 100_000, 1_000_000]

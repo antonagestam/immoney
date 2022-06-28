@@ -12,6 +12,7 @@ from decimal import ROUND_UP
 from decimal import Decimal
 from fractions import Fraction
 from functools import cached_property
+from typing import Any
 from typing import ClassVar
 from typing import Final
 from typing import Generic
@@ -27,7 +28,6 @@ from .errors import FrozenInstanceError
 from .errors import MoneyParseError
 from .types import ParsableMoneyValue
 from .types import PositiveDecimal
-from .types import PowerOf10
 
 CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 
@@ -35,7 +35,14 @@ CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 @abstractattrs
 class Currency(abc.ABC):
     code: ClassVar[Abstract[str]]
-    subunit: ClassVar[Abstract[PowerOf10]]
+    subunit: ClassVar[Abstract[int]]
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if not cls.subunit in {1, 10, 100, 1_000, 10_000, 100_000, 1_000_000}:
+            raise ValueError(
+                "Currency subunits other than powers of 10 are not supported"
+            )
 
     def __str__(self) -> str:
         return self.code
