@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import decimal
 from decimal import Decimal
+from typing import Literal
 from typing import TypeAlias
 
 from phantom import Phantom
@@ -32,3 +33,5 @@ class PositiveDecimal(
 
 
 ParsableMoneyValue: TypeAlias = int | str | Decimal
+
+PowerOf10 = Literal[1, 10, 100, 1_000, 10_000, 100_000, 1_000_000]

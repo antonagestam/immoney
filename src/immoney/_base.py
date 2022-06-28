@@ -12,7 +12,6 @@ from decimal import ROUND_UP
 from decimal import Decimal
 from fractions import Fraction
 from functools import cached_property
-from typing import Any
 from typing import ClassVar
 from typing import Final
 from typing import Generic
@@ -28,6 +27,7 @@ from .errors import FrozenInstanceError
 from .errors import MoneyParseError
 from .types import ParsableMoneyValue
 from .types import PositiveDecimal
+from .types import PowerOf10
 
 CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 
@@ -35,7 +35,7 @@ CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 @abstractattrs
 class Currency(abc.ABC):
     code: ClassVar[Abstract[str]]
-    subunit: ClassVar[Abstract[int]]
+    subunit: ClassVar[Abstract[PowerOf10]]
 
     def __str__(self) -> str:
         return self.code
@@ -185,10 +185,6 @@ class Money(Generic[C]):
 
     # TODO: Support precision-lossy multiplication with floats?
     # TODO: Can the allowed multiplication types be reflected properly here?
-    # TODO: Support multiplication with negative value? Is it OK for SubunitFraction to
-    #   support negative values? SubunitFraction.round() would need to return union of
-    #   Money | Overdraft. Alternative would be to introduce SubunitFractionOverdraft,
-    #   which like an amount of complexity that is hard to justify.
     @overload
     def __mul__(self: Money[C], other: int) -> Money[C]:
         ...
@@ -197,14 +193,31 @@ class Money(Generic[C]):
     def __mul__(self: Money[C], other: Decimal) -> SubunitFraction[C]:
         ...
 
-    def __mul__(self, other: object) -> Money[C] | SubunitFraction[C]:
-        if isinstance(other, int) and other >= 0:
-            return Money(self.value * other, self.currency)
-        if isinstance(other, Decimal) and other >= 0:
-            return SubunitFraction(Fraction(self.as_subunit() * other), self.currency)
+    def __mul__(self, other: object) -> Money[C] | SubunitFraction[C] | Overdraft[C]:
+        if isinstance(other, int):
+            return (
+                Money(self.value * other, self.currency)
+                if other >= 0
+                else Overdraft(Money(-self.value * other, self.currency))
+            )
+        if isinstance(other, Decimal):
+            return SubunitFraction(
+                Fraction(self.as_subunit()) * Fraction(other),
+                self.currency,
+            )
         return NotImplemented
 
+    @overload
     def __rmul__(self: Money[C], other: int) -> Money[C]:
+        ...
+
+    @overload
+    def __rmul__(self: Money[C], other: Decimal) -> SubunitFraction[C]:
+        ...
+
+    def __rmul__(
+        self: Money[C], other: int | Decimal
+    ) -> Money[C] | SubunitFraction[C] | Overdraft[C]:
         return self.__mul__(other)
 
     def __truediv__(self: Money[C], other: object) -> tuple[Money[C], ...]:

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import random
 from decimal import Decimal
+from decimal import InvalidOperation
 from fractions import Fraction
 from typing import Any
+from typing import get_args
 
 import pytest
 from abcattrs import UndefinedAbstractAttribute
@@ -22,6 +25,7 @@ from immoney.currencies import NOK
 from immoney.currencies import SEK
 from immoney.errors import FrozenInstanceError
 from immoney.errors import MoneyParseError
+from immoney.types import PowerOf10
 
 max_valid_sek = 100_000_000_000_000_000_000_000_000 - 1
 valid_sek = decimals(
@@ -55,11 +59,10 @@ def sums_to_valid_sek(
 @composite
 def currencies(
     draw,
-    subunit_values=integers(min_value=1, max_value=100_000_000_000),
     code_values=text(max_size=3, min_size=3),
 ):
     class Subclass(Currency):
-        subunit = draw(subunit_values)
+        subunit = random.choice(get_args(PowerOf10))
         code = draw(code_values)
 
     return Subclass()
@@ -383,7 +386,68 @@ class TestMoney:
     def test_neg(self, a: Money[Any]):
         negged = -a
         assert isinstance(negged, Overdraft)
+        assert negged.money == a
         assert +a == a
+
+    @given(monies(), integers(min_value=0))
+    def test_returns_instance_when_multiplied_with_positive_integer(
+        self,
+        a: Money[Any],
+        b: int,
+    ):
+        expected_product = a.value * b
+        try:
+            product = a * b
+        except InvalidOperation:
+            assert expected_product * a.currency.subunit > max_valid_sek
+            return
+        assert isinstance(product, Money)
+        assert product.currency is a.currency
+        assert product.value == expected_product
+        reverse_applied = b * a
+        assert isinstance(reverse_applied, Money)
+        assert reverse_applied.currency is a.currency
+        assert reverse_applied.value == expected_product
+
+    @given(monies(), integers(max_value=-1))
+    def test_returns_overdraft_when_multiplied_with_negative_integer(
+        self,
+        a: Money[Any],
+        b: int,
+    ):
+        expected_product = -a.value * b
+        try:
+            product = a * b
+        except InvalidOperation:
+            assert expected_product * a.currency.subunit > max_valid_sek
+            return
+        assert isinstance(product, Overdraft)
+        assert product.money.currency is a.currency
+        assert product.money.value == expected_product
+        reverse_applied = b * a
+        assert isinstance(reverse_applied, Overdraft)
+        assert reverse_applied.money.currency is a.currency
+        assert reverse_applied.money.value == expected_product
+
+    @given(monies(), decimals(allow_infinity=False, allow_nan=False))
+    def test_returns_subunit_fraction_when_multiplied_with_decimal(
+        self,
+        a: Money[Any],
+        b: Decimal,
+    ):
+        try:
+            product = a * b
+        except InvalidOperation:
+            return
+        assert isinstance(product, SubunitFraction)
+        assert product.currency is a.currency
+        assert product.value == Fraction(a.value) * Fraction(b) * Fraction(
+            a.currency.subunit
+        )
+        reverse_applied = b * a
+        assert isinstance(reverse_applied, SubunitFraction)
+        assert reverse_applied.currency is a.currency
+        assert reverse_applied.value == product.value
 
     @given(valid_sek, valid_sek)
     def test_raises_type_error_for_multiplication_between_instances(
