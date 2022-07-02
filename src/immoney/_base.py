@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import decimal
 import enum
 import math
 from decimal import ROUND_05UP
@@ -25,7 +26,9 @@ from typing import overload
 from abcattrs import Abstract
 from abcattrs import abstractattrs
 
+from .errors import DivisionByZero
 from .errors import FrozenInstanceError
+from .errors import InvalidSubunit
 from .errors import MoneyParseError
 from .types import ParsableMoneyValue
 from .types import PositiveDecimal
@@ -42,7 +45,7 @@ class Currency(abc.ABC):
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         if cls.subunit not in valid_subunit:
-            raise ValueError(
+            raise InvalidSubunit(
                 "Currency subunits other than powers of 10 are not supported"
             )
 
@@ -96,6 +99,10 @@ class Currency(abc.ABC):
 
     def from_subunit(self: CurrencySelf, value: int) -> Money[CurrencySelf]:
         return Money.from_subunit(value, self)
+
+    @cached_property
+    def one_subunit(self: CurrencySelf) -> Money[CurrencySelf]:
+        return self.from_subunit(1)
 
 
 C = TypeVar("C", bound=Currency)
@@ -194,7 +201,6 @@ class Money(Generic[C]):
         return Overdraft(self)
 
     # TODO: Support precision-lossy multiplication with floats?
-    # TODO: Can the allowed multiplication types be reflected properly here?
     @overload
     def __mul__(self: Money[C], other: int) -> Money[C] | Overdraft[C]:
         ...
@@ -246,7 +252,12 @@ class Money(Generic[C]):
         """
         if not isinstance(other, int):
             return NotImplemented
-        under = self.floored(self.value / other, self.currency)
+
+        try:
+            under = self.floored(self.value / other, self.currency)
+        except decimal.DivisionByZero as e:
+            raise DivisionByZero from e
+
         under_subunit = under.as_subunit()
         remainder = self.as_subunit() - under_subunit * other
         over = Money.from_subunit(under_subunit + 1, self.currency)

@@ -23,10 +23,13 @@ from immoney import SubunitFraction
 from immoney._base import valid_subunit
 from immoney.currencies import NOK
 from immoney.currencies import SEK
+from immoney.currencies import SEKType
+from immoney.errors import DivisionByZero
 from immoney.errors import FrozenInstanceError
+from immoney.errors import InvalidSubunit
 from immoney.errors import MoneyParseError
 
-max_valid_sek = 100_000_000_000_000_000_000_000_000 - 1
+max_valid_sek = 10_000_000_000_000_000_000_000_000 - 1
 valid_sek = decimals(
     min_value=0,
     max_value=max_valid_sek,
@@ -73,6 +76,10 @@ class TestCurrency:
 
         with pytest.raises(UndefinedAbstractAttribute):
             type("sub", (Currency,), {"subunit": 1})
+
+    def test_subclassing_with_invalid_subunit_raises_value_error(self):
+        with pytest.raises(InvalidSubunit):
+            type("sub", (Currency,), {"subunit": 2, "code": "foo"})
 
     @given(text())
     def test_str_representation_is_code(self, test_code: str):
@@ -458,7 +465,33 @@ class TestMoney:
         with pytest.raises(TypeError):
             b * a  # type: ignore[operator]
 
-    # test __mul__
-    # test __rmul__? Why?
-    # truediv
+    @pytest.mark.parametrize("value", [object(), 1.0, str(), {}])
+    def test_raises_type_error_for_truediv_with_non_integer_value(self, value: object):
+        with pytest.raises(TypeError):
+            SEK(1) / value
+
+    @given(valid_sek, integers(min_value=1, max_value=5))
+    def test_returns_evenly_divided_parts_on_integer_truediv(
+        self, dividend_value: Decimal, divisor: int
+    ):
+        dividend = SEK(dividend_value)
+        quotient = dividend / divisor
+
+        # The number of parts the value is divided among is equal to divisor.
+        assert len(quotient) == divisor
+        # The sum of all the returned parts are equal to the dividend.
+        assert sum(quotient, SEK.zero) == dividend
+        # The returned parts differ at most by 1 subunit.
+        assert max(quotient) - min(quotient) in (0, SEK.one_subunit)
+        # The returned parts are sorted in descending order.
+        assert sorted(quotient, reverse=True) == list(quotient)
+
+    @given(valid_sek)
+    def test_raises_division_by_zero_on_truediv_with_zero(self, value: Decimal):
+        non_zero = SEK(value) + SEK.one_subunit
+        with pytest.raises(DivisionByZero):
+            non_zero / 0
+
+    # to test:
+    # -> truediv
     # floordiv
