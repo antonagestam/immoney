@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import decimal
 from decimal import Decimal
-from typing import Literal
 from typing import TypeAlias
 
 from phantom import Phantom

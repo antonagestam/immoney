@@ -19,6 +19,7 @@ from typing import Generic
 from typing import NoReturn
 from typing import TypeVar
 from typing import cast
+from typing import final
 from typing import overload
 
 from abcattrs import Abstract
@@ -30,6 +31,7 @@ from .types import ParsableMoneyValue
 from .types import PositiveDecimal
 
 CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
+valid_subunit: Final = frozenset({1, 10, 100, 1_000, 10_000, 100_000, 1_000_000})
 
 
 @abstractattrs
@@ -37,9 +39,9 @@ class Currency(abc.ABC):
     code: ClassVar[Abstract[str]]
     subunit: ClassVar[Abstract[int]]
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
-        if not cls.subunit in {1, 10, 100, 1_000, 10_000, 100_000, 1_000_000}:
+        if cls.subunit not in valid_subunit:
             raise ValueError(
                 "Currency subunits other than powers of 10 are not supported"
             )
@@ -100,6 +102,7 @@ C = TypeVar("C", bound=Currency)
 MoneySelf = TypeVar("MoneySelf", bound="Money[Any]")
 
 
+@final
 class Money(Generic[C]):
     __slots__ = ("value", "currency", "__weakref__")
 
@@ -193,7 +196,7 @@ class Money(Generic[C]):
     # TODO: Support precision-lossy multiplication with floats?
     # TODO: Can the allowed multiplication types be reflected properly here?
     @overload
-    def __mul__(self: Money[C], other: int) -> Money[C]:
+    def __mul__(self: Money[C], other: int) -> Money[C] | Overdraft[C]:
         ...
 
     @overload
@@ -215,7 +218,7 @@ class Money(Generic[C]):
         return NotImplemented
 
     @overload
-    def __rmul__(self: Money[C], other: int) -> Money[C]:
+    def __rmul__(self: Money[C], other: int) -> Money[C] | Overdraft[C]:
         ...
 
     @overload
@@ -290,6 +293,7 @@ class Round(enum.Enum):
 
 
 # TODO: Make immutable
+@final
 class SubunitFraction(Generic[C]):
     __slots__ = ("value", "currency", "__weakref__")
 
@@ -327,6 +331,7 @@ class SubunitFraction(Generic[C]):
 
 
 # TODO: Make immutable
+@final
 class Overdraft(Generic[C]):
     __slots__ = ("money", "__weakref__")
 
@@ -361,3 +366,26 @@ class Overdraft(Generic[C]):
         if isinstance(other, Overdraft):
             return Overdraft(self.money + other.money)
         return NotImplemented
+
+    @overload
+    def __sub__(self: Overdraft[C], other: Money[C]) -> Overdraft[C]:
+        ...
+
+    @overload
+    def __sub__(self: Overdraft[C], other: Overdraft[C]) -> Money[C] | Overdraft[C]:
+        ...
+
+    def __sub__(self: Overdraft[C], other: object) -> Money[C] | Overdraft[C]:
+        if isinstance(other, Money):
+            if self.money.currency != other.currency:
+                return NotImplemented
+            return Overdraft(self.money + other)
+        if isinstance(other, Overdraft):
+            if self.money.currency != other.money.currency:
+                return NotImplemented
+            return other.money - self.money
+        return NotImplemented
+
+    def __rsub__(self, other: Money[C]) -> Overdraft[C]:
+        raise NotImplementedError
+        ...

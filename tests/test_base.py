@@ -20,6 +20,7 @@ from immoney import Money
 from immoney import Overdraft
 from immoney import Round
 from immoney import SubunitFraction
+from immoney._base import valid_subunit
 from immoney.currencies import NOK
 from immoney.currencies import SEK
 from immoney.errors import FrozenInstanceError
@@ -33,7 +34,6 @@ valid_sek = decimals(
     allow_nan=False,
     allow_infinity=False,
 )
-valid_subunit_value = integers(min_value=1)
 very_small_decimal = Decimal("0.0000000000000000000000000001")
 
 
@@ -60,7 +60,7 @@ def currencies(
     code_values=text(max_size=3, min_size=3),
 ):
     class Subclass(Currency):
-        subunit = random.choice((1, 10, 100, 1_000, 10_000, 100_000, 1_000_000))
+        subunit = random.choice(tuple(valid_subunit))
         code = draw(code_values)
 
     return Subclass()
@@ -101,7 +101,7 @@ class TestCurrency:
         assert SEK.subunit == 100
         assert initial == getattr(SEK, name, None)
 
-    @given(integers(min_value=1))
+    @pytest.mark.parametrize("subunit_value", valid_subunit)
     def test_decimal_exponent_is_width_of_subunit(self, subunit_value: int):
         class Subclass(Currency):
             code = "foo"
