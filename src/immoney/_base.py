@@ -13,6 +13,7 @@ from decimal import ROUND_UP
 from decimal import Decimal
 from fractions import Fraction
 from functools import cached_property
+from functools import lru_cache
 from typing import Any
 from typing import ClassVar
 from typing import Final
@@ -106,20 +107,35 @@ class Currency(abc.ABC):
 
 
 C = TypeVar("C", bound=Currency)
+
+
+class MoneyInstanceCache(type):
+    """A metaclass that caches instances using functools.lru_cache."""
+
+    @lru_cache
+    def instantiate(cls, value: Decimal, currency: C) -> Money[C]:
+        return super(MoneyInstanceCache, cls).__call__(value, currency)  # type: ignore[no-any-return]
+
+    def __call__(cls, value: ParsableMoneyValue, currency: C, /) -> Money[C]:  # type: ignore[override]
+        if not isinstance(currency, Currency):
+            raise TypeError(
+                f"Argument currency of {cls.__qualname__!r} must be a Currency, "
+                f"got object of type {type(currency)!r}"
+            )
+        normalized_value = currency.normalize_value(value)
+        return cls.instantiate(normalized_value, currency)
+
+
 MoneySelf = TypeVar("MoneySelf", bound="Money[Any]")
 
 
 @final
-class Money(Generic[C]):
+class Money(Generic[C], metaclass=MoneyInstanceCache):
     __slots__ = ("value", "currency", "__weakref__")
 
-    def __init__(self, value: ParsableMoneyValue, currency: C) -> None:
-        if not isinstance(currency, Currency):
-            raise TypeError(
-                f"Argument currency of {type(self).__qualname__!r} must be a Currency, "
-                f"got object of type {type(currency)!r}"
-            )
-        self.value: Final = currency.normalize_value(value)
+    def __init__(self, value: ParsableMoneyValue, currency: C, /) -> None:
+        # Type ignore is safe because metaclass handles normalization.
+        self.value: Final[Decimal] = value  # type: ignore[assignment]
         self.currency: Final = currency
 
     def __repr__(self) -> str:
@@ -284,8 +300,8 @@ class Money(Generic[C]):
     # This needs HKT to allow typing to work properly for subclasses of Money.
     def floored(cls, value: Decimal, currency: C) -> Money[C]:
         return cls(
-            value=value.quantize(currency.decimal_exponent, rounding=ROUND_DOWN),
-            currency=currency,
+            value.quantize(currency.decimal_exponent, rounding=ROUND_DOWN),
+            currency,
         )
 
 

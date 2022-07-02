@@ -190,6 +190,13 @@ class TestMoney:
         assert instantiated.value == value
         assert instantiated.value.as_tuple().exponent == -2
 
+    @given(valid_sek)
+    @example(Decimal("1"))
+    @example(Decimal("1.01"))
+    @example(Decimal("1.010000"))
+    def test_instantiation_caches_instances(self, value: Decimal):
+        assert SEK(value) is SEK(value)
+
     def test_cannot_instantiate_subunit_fraction(self):
         with pytest.raises(MoneyParseError):
             SEK(Decimal("1.001"))
@@ -470,7 +477,7 @@ class TestMoney:
         with pytest.raises(TypeError):
             SEK(1) / value
 
-    @given(valid_sek, integers(min_value=1, max_value=5))
+    @given(valid_sek, integers(min_value=1, max_value=500))
     def test_returns_evenly_divided_parts_on_integer_truediv(
         self, dividend_value: Decimal, divisor: int
     ):
