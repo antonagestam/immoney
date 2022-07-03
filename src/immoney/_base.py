@@ -123,7 +123,7 @@ class MoneyInstanceCache(type):
     def __call__(cls, value: ParsableMoneyValue, currency: C, /) -> Money[C]:
         if not isinstance(currency, Currency):
             raise TypeError(
-                f"Argument currency of {cls.__qualname__!r} must be a Currency, "
+                f"Argument 'currency' of {cls.__qualname__!r} must be a Currency, "
                 f"got object of type {type(currency)!r}"
             )
         normalized_value = currency.normalize_value(value)
