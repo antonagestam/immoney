@@ -77,3 +77,10 @@ convenience an exception is made for integer zero, which is always unambiguous.
 
 "2 dollars" is represented exactly the same as "2.00 dollars", in every aspect. This
 means that normalization of values happen at instantiation time.
+
+#### Instance cache
+
+Since instances of `Money` and `Currency` are immutable it's safe to reuse existing
+instances instead of instantiating new ones. This happens transparently when
+instantiating a new `Money` instance and can lead to faster code and less consumed
+memory.
