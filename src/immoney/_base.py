@@ -356,7 +356,11 @@ class SubunitFraction(Generic[C]):
         return NotImplemented
 
     @classmethod
-    def from_money(cls, money: Money[C], denominator: int) -> SubunitFraction[C]:
+    def from_money(
+        cls,
+        money: Money[C],
+        denominator: int | Fraction,
+    ) -> SubunitFraction[C]:
         return SubunitFraction(
             Fraction(money.as_subunit(), denominator), money.currency
         )

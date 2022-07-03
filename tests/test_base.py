@@ -505,7 +505,7 @@ class TestMoney:
         self, value: object
     ):
         with pytest.raises(TypeError):
-            SEK(1) // value
+            SEK(1) // value  # type: ignore[operator]
 
     @given(valid_sek, integers(min_value=1))
     def test_returns_subunit_fraction_on_floordiv(
