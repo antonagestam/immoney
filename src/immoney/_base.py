@@ -18,7 +18,6 @@ from typing import Any
 from typing import ClassVar
 from typing import Final
 from typing import Generic
-from typing import NoReturn
 from typing import TypeVar
 from typing import cast
 from typing import final
@@ -26,6 +25,7 @@ from typing import overload
 
 from abcattrs import Abstract
 from abcattrs import abstractattrs
+from typing_extensions import Never
 
 from .errors import DivisionByZero
 from .errors import FrozenInstanceError
@@ -62,10 +62,9 @@ class Currency(abc.ABC):
     def __hash__(self) -> int:
         return hash((self.code, self.subunit))
 
-    # Using NoReturn makes mypy give a type error for assignment to attributes (because
-    # NoReturn is the bottom type).
-    # TODO: Switch to typing_extensions.Never once available.
-    def __setattr__(self, key: str, value: NoReturn) -> None:
+    # Using Never makes mypy give a type error for assignment to attributes (because
+    # Never is the bottom type).
+    def __setattr__(self, key: str, value: Never) -> None:
         raise FrozenInstanceError(
             f"Currency instances are immutable, cannot write to attribute {key!r}"
         )
@@ -148,10 +147,9 @@ class Money(Generic[C], metaclass=MoneyInstanceCache):
     def __hash__(self) -> int:
         return hash((self.currency, self.value))
 
-    # Using NoReturn makes mypy give a type error for assignment to attributes (because
-    # NoReturn is the bottom type).
-    # TODO: Switch to typing_extensions.Never once available.
-    def __setattr__(self, key: str, value: NoReturn) -> None:
+    # Using Never makes mypy give a type error for assignment to attributes (because
+    # Never is the bottom type).
+    def __setattr__(self, key: str, value: Never) -> None:
         if hasattr(self, "currency") and hasattr(self, "value"):
             raise FrozenInstanceError(
                 f"Currency instances are immutable, cannot write to attribute {key!r}"
