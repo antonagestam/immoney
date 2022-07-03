@@ -6,8 +6,7 @@ of bugs:
 - Exposed and internal data types are either immutable or faux immutable.
 - Invalid amounts of money cannot be represented. There is no such thing as `0.001` US
   dollars, and there is no such thing as negative money.
-- Builtin operations never implicitly lose precision. This point is pretty much fall-out
-  of the previous point, but still worth mentioning.
+- Builtin operations never implicitly lose precision.
 - Built from the ground-up with support for static type checking in mind. This means
   that bugs that attempt to mix currencies can be found by a static type checker.
 
