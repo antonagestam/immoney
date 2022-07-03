@@ -1,4 +1,4 @@
-### Features
+### Design goals
 
 There are a few core design aspects of this library that each eliminate entire classes
 of bugs:
@@ -10,6 +10,8 @@ of bugs:
   of the previous point, but still worth mentioning.
 - Built from the ground-up with support for static type checking in mind. This means
   that bugs that attempt to mix currencies can be found by a static type checker.
+
+### Features
 
 #### Safe division
 
