@@ -110,12 +110,16 @@ C = TypeVar("C", bound=Currency)
 
 
 class MoneyInstanceCache(type):
-    """A metaclass that caches instances using functools.lru_cache."""
+    """
+    A metaclass that caches instances using functools.lru_cache. Since normalization is
+    deterministic, instances are cached by both the input and the normalized values.
+    """
 
     @lru_cache
     def instantiate(cls, value: Decimal, currency: C) -> Money[C]:
         return super().__call__(value, currency)  # type: ignore[no-any-return]
 
+    @lru_cache
     def __call__(  # type: ignore[override]
         cls,
         value: ParsableMoneyValue,

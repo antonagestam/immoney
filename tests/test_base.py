@@ -189,12 +189,9 @@ class TestMoney:
         assert instantiated.value == value
         assert instantiated.value.as_tuple().exponent == -2
 
-    @given(valid_sek)
-    @example(Decimal("1"))
-    @example(Decimal("1.01"))
-    @example(Decimal("1.010000"))
-    def test_instantiation_caches_instances(self, value: Decimal):
-        assert SEK(value) is SEK(value)
+    def test_instantiation_caches_instance(self):
+        assert SEK("1.01") is SEK("1.010")
+        assert SEK(1) is SEK(1)
 
     def test_cannot_instantiate_subunit_fraction(self):
         with pytest.raises(MoneyParseError):
