@@ -120,12 +120,7 @@ class MoneyInstanceCache(type):
         return super().__call__(value, currency)  # type: ignore[no-any-return]
 
     @lru_cache
-    def __call__(
-        cls,
-        value: ParsableMoneyValue,
-        currency: C,
-        /,
-    ) -> Money[C]:
+    def __call__(cls, value: ParsableMoneyValue, currency: C, /) -> Money[C]:
         if not isinstance(currency, Currency):
             raise TypeError(
                 f"Argument currency of {cls.__qualname__!r} must be a Currency, "
