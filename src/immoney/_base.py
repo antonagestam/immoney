@@ -120,7 +120,7 @@ class MoneyInstanceCache(type):
         return super().__call__(value, currency)  # type: ignore[no-any-return]
 
     @lru_cache
-    def __call__(  # type: ignore[override]
+    def __call__(
         cls,
         value: ParsableMoneyValue,
         currency: C,
