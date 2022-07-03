@@ -173,10 +173,7 @@ def monies(
     currencies=currencies(),
     values=valid_values,
 ):
-    currency = draw(currencies)
-    value = draw(values)
-    fraction = SubunitFraction(Fraction(value), currency)
-    return fraction.round(Round.DOWN)
+    return SubunitFraction(Fraction(draw(values)), draw(currencies)).round(Round.DOWN)
 
 
 class TestMoney:
@@ -475,25 +472,28 @@ class TestMoney:
         with pytest.raises(TypeError):
             SEK(1) / value
 
-    @given(valid_sek, integers(min_value=1, max_value=500))
+    @given(monies(), integers(min_value=1, max_value=500))
     def test_returns_evenly_divided_parts_on_integer_truediv(
-        self, dividend_value: Decimal, divisor: int
+        self,
+        dividend: Money[Any],
+        divisor: int,
     ):
-        dividend = SEK(dividend_value)
+        currency = dividend.currency
+        # dividend = SEK(dividend_value)
         quotient = dividend / divisor
 
         # The number of parts the value is divided among is equal to divisor.
         assert len(quotient) == divisor
         # The sum of all the returned parts are equal to the dividend.
-        assert sum(quotient, SEK.zero) == dividend
+        assert sum(quotient, currency.zero) == dividend
         # The returned parts differ at most by 1 subunit.
-        assert max(quotient) - min(quotient) in (0, SEK.one_subunit)
+        assert max(quotient) - min(quotient) in (0, currency.one_subunit)
         # The returned parts are sorted in descending order.
         assert sorted(quotient, reverse=True) == list(quotient)
 
-    @given(valid_sek)
-    def test_raises_division_by_zero_on_truediv_with_zero(self, value: Decimal):
-        non_zero = SEK(value) + SEK.one_subunit
+    @given(monies())
+    def test_raises_division_by_zero_on_truediv_with_zero(self, value: Money[Any]):
+        non_zero = value + value.currency.one_subunit
         with pytest.raises(DivisionByZero):
             non_zero / 0
 
@@ -504,20 +504,19 @@ class TestMoney:
         with pytest.raises(TypeError):
             SEK(1) // value  # type: ignore[operator]
 
-    @given(valid_sek, integers(min_value=1))
+    @given(monies(), integers(min_value=1))
     def test_returns_subunit_fraction_on_floordiv(
-        self, dividend_value: Decimal, divisor: int
+        self, dividend: Money[Any], divisor: int
     ):
-        dividend = SEK(dividend_value)
         quotient = dividend // divisor
 
         assert isinstance(quotient, SubunitFraction)
         assert quotient.value == Fraction(dividend.as_subunit(), divisor)
         assert quotient.currency == dividend.currency
 
-    @given(valid_sek)
-    def test_raises_division_by_zero_on_floordiv_with_zero(self, value: Decimal):
-        non_zero = SEK(value) + SEK.one_subunit
+    @given(monies())
+    def test_raises_division_by_zero_on_floordiv_with_zero(self, value: Money[Any]):
+        non_zero = value + value.currency.one_subunit
         with pytest.raises(DivisionByZero):
             non_zero // 0
         with pytest.raises(DivisionByZero):
@@ -549,6 +548,6 @@ class TestMoney:
         one_main_unit = Money.from_subunit(Foo.subunit, Foo)
         assert one_main_unit == Foo(1)
 
-    @given(integers(max_value=max_valid_sek, min_value=0))
-    def test_subunit_roundtrip(self, value: int):
-        assert value == Money.from_subunit(value, SEK).as_subunit()
+    @given(currencies(), integers(max_value=max_valid_sek, min_value=0))
+    def test_subunit_roundtrip(self, currency: Currency, value: int):
+        assert value == Money.from_subunit(value, currency).as_subunit()
