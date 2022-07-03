@@ -472,7 +472,9 @@ class TestMoney:
             b * a  # type: ignore[operator]
 
     @pytest.mark.parametrize("value", [object(), 1.0, "", {}])
-    def test_raises_type_error_for_truediv_with_non_integer_value(self, value: object):
+    def test_raises_type_error_for_truediv_with_invalid_denominator(
+        self, value: object
+    ):
         with pytest.raises(TypeError):
             SEK(1) / value
 
@@ -498,6 +500,58 @@ class TestMoney:
         with pytest.raises(DivisionByZero):
             non_zero / 0
 
-    # to test:
-    # -> truediv
-    # floordiv
+    @pytest.mark.parametrize("value", [object(), 1.0, Decimal("1.0"), {}])
+    def test_raises_type_error_for_floordiv_with_invalid_denominator(
+        self, value: object
+    ):
+        with pytest.raises(TypeError):
+            SEK(1) // value
+
+    @given(valid_sek, integers(min_value=1))
+    def test_returns_subunit_fraction_on_floordiv(
+        self, dividend_value: Decimal, divisor: int
+    ):
+        dividend = SEK(dividend_value)
+        quotient = dividend // divisor
+
+        assert isinstance(quotient, SubunitFraction)
+        assert quotient.value == Fraction(dividend.as_subunit(), divisor)
+        assert quotient.currency == dividend.currency
+
+    @given(valid_sek)
+    def test_raises_division_by_zero_on_floordiv_with_zero(self, value: Decimal):
+        non_zero = SEK(value) + SEK.one_subunit
+        with pytest.raises(DivisionByZero):
+            non_zero // 0
+        with pytest.raises(DivisionByZero):
+            non_zero // Fraction()
+
+    def test_as_subunit_returns_value_as_subunit_integer(self):
+        class FooType(Currency):
+            code = "foo"
+            subunit = 10_000
+
+        Foo = FooType()
+
+        one_subunit = Foo("0.0001")
+        assert one_subunit.as_subunit() == 1
+
+        one_main_unit = Foo(1)
+        assert one_main_unit.as_subunit() == Foo.subunit
+
+    def test_from_subunit_returns_instance(self):
+        class FooType(Currency):
+            code = "foo"
+            subunit = 10_000
+
+        Foo = FooType()
+
+        one_subunit = Money.from_subunit(1, Foo)
+        assert one_subunit == Foo("0.0001")
+
+        one_main_unit = Money.from_subunit(Foo.subunit, Foo)
+        assert one_main_unit == Foo(1)
+
+    @given(integers(max_value=max_valid_sek, min_value=0))
+    def test_subunit_roundtrip(self, value: int):
+        assert value == Money.from_subunit(value, SEK).as_subunit()

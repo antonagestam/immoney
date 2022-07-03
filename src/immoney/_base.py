@@ -288,9 +288,19 @@ class Money(Generic[C], metaclass=MoneyInstanceCache):
             *(under for _ in range(other - remainder)),
         )
 
+    @overload
+    def __floordiv__(self, other: int) -> SubunitFraction[C]:
+        ...
+
+    @overload
+    def __floordiv__(self, other: Fraction) -> SubunitFraction[C]:
+        ...
+
     def __floordiv__(self, other: object) -> SubunitFraction[C]:
-        if not isinstance(other, int):
+        if not isinstance(other, (int, Fraction)):
             return NotImplemented
+        if other == 0:
+            raise DivisionByZero
         return SubunitFraction.from_money(self, other)
 
     def as_subunit(self) -> int:
@@ -325,6 +335,7 @@ class Round(enum.Enum):
 
 
 # TODO: Make immutable
+# TODO: Use instance cache
 @final
 class SubunitFraction(Generic[C]):
     __slots__ = ("value", "currency", "__weakref__")
@@ -363,6 +374,7 @@ class SubunitFraction(Generic[C]):
 
 
 # TODO: Make immutable
+# TODO: Use instance cache
 @final
 class Overdraft(Generic[C]):
     __slots__ = ("money", "__weakref__")
