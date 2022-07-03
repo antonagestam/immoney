@@ -114,9 +114,14 @@ class MoneyInstanceCache(type):
 
     @lru_cache
     def instantiate(cls, value: Decimal, currency: C) -> Money[C]:
-        return super(MoneyInstanceCache, cls).__call__(value, currency)  # type: ignore[no-any-return]
+        return super().__call__(value, currency)  # type: ignore[no-any-return]
 
-    def __call__(cls, value: ParsableMoneyValue, currency: C, /) -> Money[C]:  # type: ignore[override]
+    def __call__(  # type: ignore[override]
+        cls,
+        value: ParsableMoneyValue,
+        currency: C,
+        /,
+    ) -> Money[C]:
         if not isinstance(currency, Currency):
             raise TypeError(
                 f"Argument currency of {cls.__qualname__!r} must be a Currency, "

@@ -23,7 +23,6 @@ from immoney import SubunitFraction
 from immoney._base import valid_subunit
 from immoney.currencies import NOK
 from immoney.currencies import SEK
-from immoney.currencies import SEKType
 from immoney.errors import DivisionByZero
 from immoney.errors import FrozenInstanceError
 from immoney.errors import InvalidSubunit
@@ -472,7 +471,7 @@ class TestMoney:
         with pytest.raises(TypeError):
             b * a  # type: ignore[operator]
 
-    @pytest.mark.parametrize("value", [object(), 1.0, str(), {}])
+    @pytest.mark.parametrize("value", [object(), 1.0, "", {}])
     def test_raises_type_error_for_truediv_with_non_integer_value(self, value: object):
         with pytest.raises(TypeError):
             SEK(1) / value
