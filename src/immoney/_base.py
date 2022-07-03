@@ -436,4 +436,3 @@ class Overdraft(Generic[C]):
 
     def __rsub__(self, other: Money[C]) -> Overdraft[C]:
         raise NotImplementedError
-        ...
