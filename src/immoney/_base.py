@@ -27,6 +27,7 @@ from abcattrs import abstractattrs
 from typing_extensions import Never
 
 from ._cache import InstanceCache
+from ._frozen import Frozen
 from .errors import DivisionByZero
 from .errors import FrozenInstanceError
 from .errors import InvalidSubunit
@@ -39,7 +40,7 @@ valid_subunit: Final = frozenset({1, 10, 100, 1_000, 10_000, 100_000, 1_000_000}
 
 
 @abstractattrs
-class Currency(abc.ABC):
+class Currency(Frozen, abc.ABC):
     code: ClassVar[Abstract[str]]
     subunit: ClassVar[Abstract[int]]
 
@@ -61,13 +62,6 @@ class Currency(abc.ABC):
 
     def __hash__(self) -> int:
         return hash((self.code, self.subunit))
-
-    # Using Never makes mypy give a type error for assignment to attributes (because
-    # Never is the bottom type).
-    def __setattr__(self, key: str, value: Never) -> None:
-        raise FrozenInstanceError(
-            f"Currency instances are immutable, cannot write to attribute {key!r}"
-        )
 
     @cached_property
     def decimal_exponent(self) -> Decimal:
@@ -110,8 +104,8 @@ MoneySelf = TypeVar("MoneySelf", bound="Money[Any]")
 
 
 @final
-class Money(Generic[C], metaclass=InstanceCache):
-    __slots__ = ("value", "currency", "__weakref__")
+class Money(Frozen, Generic[C], metaclass=InstanceCache):
+    __slots__ = ("value", "currency")
 
     def __init__(self, value: ParsableMoneyValue, currency: C, /) -> None:
         # Type ignore is safe because metaclass handles normalization.
@@ -132,15 +126,6 @@ class Money(Generic[C], metaclass=InstanceCache):
 
     def __hash__(self) -> int:
         return hash((self.currency, self.value))
-
-    # Using Never makes mypy give a type error for assignment to attributes (because
-    # Never is the bottom type).
-    def __setattr__(self, key: str, value: Never) -> None:
-        if hasattr(self, "currency") and hasattr(self, "value"):
-            raise FrozenInstanceError(
-                f"Currency instances are immutable, cannot write to attribute {key!r}"
-            )
-        super().__setattr__(key, value)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, int) and other == 0:
