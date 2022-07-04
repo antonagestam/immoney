@@ -1,51 +1,11 @@
 from decimal import Decimal
 from fractions import Fraction
 
-import pytest
-
 from immoney import Money
 from immoney import Overdraft
 from immoney import Round
 from immoney import SubunitFraction
-from immoney.currencies import NOK
 from immoney.currencies import SEK
-
-
-def test_embryo_of_a_suite():
-    m = Money("5.37", SEK)
-    a, b = m / 2
-    assert a == Money("2.69", SEK)
-    assert b == Money("2.68", SEK)
-
-    assert a > b
-    assert not a < b
-    assert b < a
-    assert not b > a
-
-    assert a + b == m
-
-    a, b, c, d = m / 4
-    assert a == Money("1.35", SEK)
-    assert b == Money("1.34", SEK)
-    assert c == Money("1.34", SEK)
-    assert d == Money("1.34", SEK)
-    assert a + b + c + d == m
-
-    nok = Money(1, NOK)
-    assert nok + nok == NOK(2)
-    assert m + m == m * 2
-    with pytest.raises(TypeError):
-        # TODO: Test this type error
-        nok + m  # type: ignore[operator]
-
-    assert m - 2 * m == Overdraft(m)
-
-
-def test_convenience():
-    assert NOK(123) == Money(123, NOK)
-    assert SEK("23.50") == Money("23.50", SEK)
-    assert NOK.zero == Money("0.00", NOK)
-    assert SEK.zero == Money("0.00", SEK)
 
 
 def test_random_comparisons():
