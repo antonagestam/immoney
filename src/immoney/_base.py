@@ -24,12 +24,10 @@ from typing import overload
 
 from abcattrs import Abstract
 from abcattrs import abstractattrs
-from typing_extensions import Never
 
 from ._cache import InstanceCache
 from ._frozen import Frozen
 from .errors import DivisionByZero
-from .errors import FrozenInstanceError
 from .errors import InvalidSubunit
 from .errors import MoneyParseError
 from .types import ParsableMoneyValue
@@ -302,16 +300,18 @@ class Round(enum.Enum):
     ZERO_FIVE_UP = ROUND_05UP
 
 
-# TODO: Make immutable
-# TODO: Use instance cache
 @final
-class SubunitFraction(Generic[C]):
-    __slots__ = ("value", "currency", "__weakref__")
+class SubunitFraction(Frozen, Generic[C], metaclass=InstanceCache):
+    __slots__ = ("value", "currency")
 
-    # FIXME: Check values at instantiation.
     def __init__(self, value: Fraction | Decimal, currency: C) -> None:
         self.value: Final = Fraction(value)
         self.currency: Final = currency
+
+    # FIXME: Check currency is Currency.
+    @staticmethod
+    def _normalize(value: Fraction | Decimal, currency: C) -> tuple[Fraction, C]:
+        return Fraction(value), currency
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}" f"({str(self.value)!r}, {self.currency})"
@@ -345,14 +345,17 @@ class SubunitFraction(Generic[C]):
         return Money(quantized, self.currency)
 
 
-# TODO: Make immutable
-# TODO: Use instance cache
 @final
-class Overdraft(Generic[C]):
-    __slots__ = ("money", "__weakref__")
+class Overdraft(Frozen, Generic[C], metaclass=InstanceCache):
+    __slots__ = ("money",)
 
     def __init__(self, money: Money[C]) -> None:
         self.money: Final = money
+
+    # FIXME: Check that money is Money.
+    @staticmethod
+    def _normalize(money: Money[C]) -> tuple[Money[C]]:
+        return (money,)
 
     def __repr__(self) -> str:
         return (
