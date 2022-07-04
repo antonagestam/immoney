@@ -13,7 +13,6 @@ from decimal import ROUND_UP
 from decimal import Decimal
 from fractions import Fraction
 from functools import cached_property
-from functools import lru_cache
 from typing import Any
 from typing import ClassVar
 from typing import Final
@@ -27,6 +26,7 @@ from abcattrs import Abstract
 from abcattrs import abstractattrs
 from typing_extensions import Never
 
+from ._cache import InstanceCache
 from .errors import DivisionByZero
 from .errors import FrozenInstanceError
 from .errors import InvalidSubunit
@@ -106,40 +106,26 @@ class Currency(abc.ABC):
 
 
 C = TypeVar("C", bound=Currency)
-
-
-class MoneyInstanceCache(type):
-    """
-    A metaclass that caches instances using functools.lru_cache. Since normalization is
-    deterministic, instances are cached by both the input and the normalized values.
-    """
-
-    @lru_cache
-    def instantiate(cls, value: Decimal, currency: C) -> Money[C]:
-        return super().__call__(value, currency)  # type: ignore[no-any-return]
-
-    @lru_cache
-    def __call__(cls, value: ParsableMoneyValue, currency: C, /) -> Money[C]:
-        if not isinstance(currency, Currency):
-            raise TypeError(
-                f"Argument 'currency' of {cls.__qualname__!r} must be a Currency, "
-                f"got object of type {type(currency)!r}"
-            )
-        normalized_value = currency.normalize_value(value)
-        return cls.instantiate(normalized_value, currency)
-
-
 MoneySelf = TypeVar("MoneySelf", bound="Money[Any]")
 
 
 @final
-class Money(Generic[C], metaclass=MoneyInstanceCache):
+class Money(Generic[C], metaclass=InstanceCache):
     __slots__ = ("value", "currency", "__weakref__")
 
     def __init__(self, value: ParsableMoneyValue, currency: C, /) -> None:
         # Type ignore is safe because metaclass handles normalization.
         self.value: Final[Decimal] = value  # type: ignore[assignment]
         self.currency: Final = currency
+
+    @classmethod
+    def _normalize(cls, value: ParsableMoneyValue, currency: C, /) -> tuple[Decimal, C]:
+        if not isinstance(currency, Currency):
+            raise TypeError(
+                f"Argument 'currency' of {cls.__qualname__!r} must be a Currency, "
+                f"got object of type {type(currency)!r}"
+            )
+        return currency.normalize_value(value), currency
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({str(self.value)!r}, {self.currency})"
