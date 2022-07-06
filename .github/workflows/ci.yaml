@@ -68,7 +68,7 @@ jobs:
       - run: pip install -r generate-requirements.txt
       - run: |
           python generate-currencies.py
-          diff=$(git diff --raw)
+          diff=$(git --no-pager diff)
           if [[ ! -z "$diff" ]]; then
             echo "💥 Non-empty output from git diff."
             echo
