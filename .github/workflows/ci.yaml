@@ -28,13 +28,13 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11-dev"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: pip cache
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.cfg') }}
@@ -49,3 +49,30 @@ jobs:
       #     file: coverage.xml
       #     fail_ci_if_error: true
       #     name: codecov-py${{ matrix.python-version }}
+
+  check-generate-currencies:
+    name: Check currencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11-dev"
+      - name: pip cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('generate-requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip
+      - run: pip install -r generate-requirements.txt
+      - run: |
+          python generate-currencies.py
+          diff=$(git diff --raw)
+          if [[ ! -z "$diff" ]]; then
+            echo "💥 Non-empty output from git diff."
+            echo
+            echo "$diff"
+          else
+            echo "✅ No diff to current currency module."
+          fi
