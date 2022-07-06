@@ -73,6 +73,7 @@ jobs:
             echo "💥 Non-empty output from git diff."
             echo
             echo "$diff"
+            exit 1
           else
             echo "✅ No diff to current currency module."
           fi
