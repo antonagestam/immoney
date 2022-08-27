@@ -1,3 +1,13 @@
+<h1 align=center>immoney</h1>
+
+<p align=center>
+    <a href=https://github.com/antonagestam/immoney/actions?query=workflow%3ACI+branch%3Amain><img src=https://github.com/antonagestam/immoney/workflows/CI/badge.svg alt="CI Build Status"></a>
+    <a href=https://codecov.io/gh/antonagestam/immoney><img src=https://codecov.io/gh/antonagestam/immoney/branch/main/graph/badge.svg?token=UEI88N0EPG alt="Test coverage report"></a>
+    <br>
+    <a href=https://pypi.org/project/immoney/><img src=https://img.shields.io/pypi/v/immoney.svg?color=informational&label=PyPI alt="PyPI Package"></a>
+    <a href=https://pypi.org/project/immoney/><img src=https://img.shields.io/pypi/pyversions/immoney.svg?color=informational&label=Python alt="Python versions"></a>
+</p>
+
 ### Design goals
 
 There are a few core design aspects of this library that each eliminate entire classes
