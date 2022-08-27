@@ -82,6 +82,26 @@ convenience an exception is made for integer zero, which is always unambiguous.
 "2 dollars" is represented exactly the same as "2.00 dollars", in every aspect. This
 means that normalization of values happen at instantiation time.
 
+Instantiating normalizes precision to the number of subunits of the instantiated
+currency.
+
+```pycon
+>>> EUR(2)
+Money('2.00', EUR)
+>>> EUR("2.000")
+Money('2.00', EUR)
+```
+
+Trying to instantiate with a value that would result in precision loss raises a runtime
+error.
+
+```pycon
+>>> EUR("2.001")
+Traceback (most recent call last):
+  ...
+immoney.errors.MoneyParseError: Cannot interpret value as Money of currency EUR ...
+```
+
 #### Instance cache
 
 Since instances of `Money` and `Currency` are immutable it's safe to reuse existing

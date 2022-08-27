@@ -82,9 +82,9 @@ class Currency(Frozen, abc.ABC):
 
         if positive != quantized:
             raise MoneyParseError(
-                "Cannot interpret value as Money of currency {self.code} without loss "
-                "of precision. Explicitly round the value or consider using "
-                "SubunitFraction."
+                f"Cannot interpret value as Money of currency {self.code} without loss "
+                f"of precision. Explicitly round the value or consider using "
+                f"SubunitFraction."
             )
 
         return quantized
