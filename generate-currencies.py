@@ -11,6 +11,9 @@ from typing import Final
 from typing import final
 
 from . import Currency
+from .registry import CurrencyCollector, CurrencyRegistry
+
+__currencies: Final = CurrencyCollector()
 """
 currency_template = """
 
@@ -21,6 +24,12 @@ class {code}Type(Currency):
 
 
 {code}: Final = {code}Type()
+__currencies.add({code})
+"""
+registry_template = """\
+
+
+default_registry: Final[CurrencyRegistry] = __currencies.finalize()
 """
 
 
@@ -28,6 +37,7 @@ def generate_code() -> Iterator[str]:
     yield imports_template
     for currency in CURRENCIES.values():
         yield currency_template.format(code=currency.code, subunit=currency.sub_unit)
+    yield registry_template
 
 
 with currencies_file.open("w") as file:
