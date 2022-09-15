@@ -118,3 +118,22 @@ Since instances of `Money` and `Currency` are immutable it's safe to reuse exist
 instances instead of instantiating new ones. This happens transparently when
 instantiating a new `Money` instance and can lead to faster code and less consumed
 memory.
+
+#### Retrieving currencies by code
+
+Currencies can be retrieved by their codes via `immoney.currencies.registry`.
+
+```pycon
+>>> from immoney.currencies import registry
+>>> registry["NOK"]
+Currency(code=NOK, subunit=100)
+>>> registry["MVP"]
+Currency(code=MVP, subunit=1)
+>>> registry["foo"]
+Traceback (most recent call last):
+  ...
+KeyError: 'foo'
+```
+
+For custom currency implementations, `immoney.registry.CurrencyCollector` can be used to
+construct a custom registry.
