@@ -9,6 +9,7 @@ CurrencyRegistry: TypeAlias = Mapping[str, Currency]
 
 
 class CurrencyCollector:
+    __slots__ = ("__collection",)
     def __init__(self) -> None:
         self.__collection = list[tuple[str, Currency]]()
 
