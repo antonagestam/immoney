@@ -4,6 +4,10 @@ from typing import Final
 from typing import final
 
 from . import Currency
+from .registry import CurrencyCollector
+from .registry import CurrencyRegistry
+
+__currencies: Final = CurrencyCollector()
 
 
 @final
@@ -13,6 +17,7 @@ class ADPType(Currency):
 
 
 ADP: Final = ADPType()
+__currencies.add(ADP)
 
 
 @final
@@ -22,6 +27,7 @@ class AFAType(Currency):
 
 
 AFA: Final = AFAType()
+__currencies.add(AFA)
 
 
 @final
@@ -31,6 +37,7 @@ class ALKType(Currency):
 
 
 ALK: Final = ALKType()
+__currencies.add(ALK)
 
 
 @final
@@ -40,6 +47,7 @@ class AONType(Currency):
 
 
 AON: Final = AONType()
+__currencies.add(AON)
 
 
 @final
@@ -49,6 +57,7 @@ class AORType(Currency):
 
 
 AOR: Final = AORType()
+__currencies.add(AOR)
 
 
 @final
@@ -58,6 +67,7 @@ class ARAType(Currency):
 
 
 ARA: Final = ARAType()
+__currencies.add(ARA)
 
 
 @final
@@ -67,6 +77,7 @@ class ARPType(Currency):
 
 
 ARP: Final = ARPType()
+__currencies.add(ARP)
 
 
 @final
@@ -76,6 +87,7 @@ class ATSType(Currency):
 
 
 ATS: Final = ATSType()
+__currencies.add(ATS)
 
 
 @final
@@ -85,6 +97,7 @@ class AZMType(Currency):
 
 
 AZM: Final = AZMType()
+__currencies.add(AZM)
 
 
 @final
@@ -94,6 +107,7 @@ class BADType(Currency):
 
 
 BAD: Final = BADType()
+__currencies.add(BAD)
 
 
 @final
@@ -103,6 +117,7 @@ class BEFType(Currency):
 
 
 BEF: Final = BEFType()
+__currencies.add(BEF)
 
 
 @final
@@ -112,6 +127,7 @@ class BGLType(Currency):
 
 
 BGL: Final = BGLType()
+__currencies.add(BGL)
 
 
 @final
@@ -121,6 +137,7 @@ class BRCType(Currency):
 
 
 BRC: Final = BRCType()
+__currencies.add(BRC)
 
 
 @final
@@ -130,6 +147,7 @@ class BREType(Currency):
 
 
 BRE: Final = BREType()
+__currencies.add(BRE)
 
 
 @final
@@ -139,6 +157,7 @@ class BRNType(Currency):
 
 
 BRN: Final = BRNType()
+__currencies.add(BRN)
 
 
 @final
@@ -148,6 +167,7 @@ class BRRType(Currency):
 
 
 BRR: Final = BRRType()
+__currencies.add(BRR)
 
 
 @final
@@ -157,6 +177,7 @@ class BYRType(Currency):
 
 
 BYR: Final = BYRType()
+__currencies.add(BYR)
 
 
 @final
@@ -166,6 +187,7 @@ class CLEType(Currency):
 
 
 CLE: Final = CLEType()
+__currencies.add(CLE)
 
 
 @final
@@ -175,6 +197,7 @@ class CSDType(Currency):
 
 
 CSD: Final = CSDType()
+__currencies.add(CSD)
 
 
 @final
@@ -184,6 +207,7 @@ class CSKType(Currency):
 
 
 CSK: Final = CSKType()
+__currencies.add(CSK)
 
 
 @final
@@ -193,6 +217,7 @@ class CYPType(Currency):
 
 
 CYP: Final = CYPType()
+__currencies.add(CYP)
 
 
 @final
@@ -202,6 +227,7 @@ class DDMType(Currency):
 
 
 DDM: Final = DDMType()
+__currencies.add(DDM)
 
 
 @final
@@ -211,6 +237,7 @@ class DEMType(Currency):
 
 
 DEM: Final = DEMType()
+__currencies.add(DEM)
 
 
 @final
@@ -220,6 +247,7 @@ class ECSType(Currency):
 
 
 ECS: Final = ECSType()
+__currencies.add(ECS)
 
 
 @final
@@ -229,6 +257,7 @@ class ECVType(Currency):
 
 
 ECV: Final = ECVType()
+__currencies.add(ECV)
 
 
 @final
@@ -238,6 +267,7 @@ class EEKType(Currency):
 
 
 EEK: Final = EEKType()
+__currencies.add(EEK)
 
 
 @final
@@ -247,6 +277,7 @@ class ESAType(Currency):
 
 
 ESA: Final = ESAType()
+__currencies.add(ESA)
 
 
 @final
@@ -256,6 +287,7 @@ class ESBType(Currency):
 
 
 ESB: Final = ESBType()
+__currencies.add(ESB)
 
 
 @final
@@ -265,6 +297,7 @@ class ESPType(Currency):
 
 
 ESP: Final = ESPType()
+__currencies.add(ESP)
 
 
 @final
@@ -274,6 +307,7 @@ class FIMType(Currency):
 
 
 FIM: Final = FIMType()
+__currencies.add(FIM)
 
 
 @final
@@ -283,6 +317,7 @@ class FRFType(Currency):
 
 
 FRF: Final = FRFType()
+__currencies.add(FRF)
 
 
 @final
@@ -292,6 +327,7 @@ class GHCType(Currency):
 
 
 GHC: Final = GHCType()
+__currencies.add(GHC)
 
 
 @final
@@ -301,6 +337,7 @@ class GRDType(Currency):
 
 
 GRD: Final = GRDType()
+__currencies.add(GRD)
 
 
 @final
@@ -310,6 +347,7 @@ class GWPType(Currency):
 
 
 GWP: Final = GWPType()
+__currencies.add(GWP)
 
 
 @final
@@ -319,6 +357,7 @@ class HRDType(Currency):
 
 
 HRD: Final = HRDType()
+__currencies.add(HRD)
 
 
 @final
@@ -328,6 +367,7 @@ class IEPType(Currency):
 
 
 IEP: Final = IEPType()
+__currencies.add(IEP)
 
 
 @final
@@ -337,6 +377,7 @@ class ITLType(Currency):
 
 
 ITL: Final = ITLType()
+__currencies.add(ITL)
 
 
 @final
@@ -346,6 +387,7 @@ class LTLType(Currency):
 
 
 LTL: Final = LTLType()
+__currencies.add(LTL)
 
 
 @final
@@ -355,6 +397,7 @@ class LUFType(Currency):
 
 
 LUF: Final = LUFType()
+__currencies.add(LUF)
 
 
 @final
@@ -364,6 +407,7 @@ class LVLType(Currency):
 
 
 LVL: Final = LVLType()
+__currencies.add(LVL)
 
 
 @final
@@ -373,6 +417,7 @@ class MGFType(Currency):
 
 
 MGF: Final = MGFType()
+__currencies.add(MGF)
 
 
 @final
@@ -382,6 +427,7 @@ class MLFType(Currency):
 
 
 MLF: Final = MLFType()
+__currencies.add(MLF)
 
 
 @final
@@ -391,6 +437,7 @@ class MROType(Currency):
 
 
 MRO: Final = MROType()
+__currencies.add(MRO)
 
 
 @final
@@ -400,6 +447,7 @@ class MTLType(Currency):
 
 
 MTL: Final = MTLType()
+__currencies.add(MTL)
 
 
 @final
@@ -409,6 +457,7 @@ class MZMType(Currency):
 
 
 MZM: Final = MZMType()
+__currencies.add(MZM)
 
 
 @final
@@ -418,6 +467,7 @@ class NLGType(Currency):
 
 
 NLG: Final = NLGType()
+__currencies.add(NLG)
 
 
 @final
@@ -427,6 +477,7 @@ class PEIType(Currency):
 
 
 PEI: Final = PEIType()
+__currencies.add(PEI)
 
 
 @final
@@ -436,6 +487,7 @@ class PLZType(Currency):
 
 
 PLZ: Final = PLZType()
+__currencies.add(PLZ)
 
 
 @final
@@ -445,6 +497,7 @@ class PTEType(Currency):
 
 
 PTE: Final = PTEType()
+__currencies.add(PTE)
 
 
 @final
@@ -454,6 +507,7 @@ class ROLType(Currency):
 
 
 ROL: Final = ROLType()
+__currencies.add(ROL)
 
 
 @final
@@ -463,6 +517,7 @@ class RURType(Currency):
 
 
 RUR: Final = RURType()
+__currencies.add(RUR)
 
 
 @final
@@ -472,6 +527,7 @@ class SDDType(Currency):
 
 
 SDD: Final = SDDType()
+__currencies.add(SDD)
 
 
 @final
@@ -481,6 +537,7 @@ class SITType(Currency):
 
 
 SIT: Final = SITType()
+__currencies.add(SIT)
 
 
 @final
@@ -490,6 +547,7 @@ class SKKType(Currency):
 
 
 SKK: Final = SKKType()
+__currencies.add(SKK)
 
 
 @final
@@ -499,6 +557,7 @@ class SRGType(Currency):
 
 
 SRG: Final = SRGType()
+__currencies.add(SRG)
 
 
 @final
@@ -508,6 +567,7 @@ class STDType(Currency):
 
 
 STD: Final = STDType()
+__currencies.add(STD)
 
 
 @final
@@ -517,6 +577,7 @@ class TJRType(Currency):
 
 
 TJR: Final = TJRType()
+__currencies.add(TJR)
 
 
 @final
@@ -526,6 +587,7 @@ class TMMType(Currency):
 
 
 TMM: Final = TMMType()
+__currencies.add(TMM)
 
 
 @final
@@ -535,6 +597,7 @@ class TPEType(Currency):
 
 
 TPE: Final = TPEType()
+__currencies.add(TPE)
 
 
 @final
@@ -544,6 +607,7 @@ class TRLType(Currency):
 
 
 TRL: Final = TRLType()
+__currencies.add(TRL)
 
 
 @final
@@ -553,6 +617,7 @@ class UAKType(Currency):
 
 
 UAK: Final = UAKType()
+__currencies.add(UAK)
 
 
 @final
@@ -562,6 +627,7 @@ class USSType(Currency):
 
 
 USS: Final = USSType()
+__currencies.add(USS)
 
 
 @final
@@ -571,6 +637,7 @@ class VEBType(Currency):
 
 
 VEB: Final = VEBType()
+__currencies.add(VEB)
 
 
 @final
@@ -580,6 +647,7 @@ class VEFType(Currency):
 
 
 VEF: Final = VEFType()
+__currencies.add(VEF)
 
 
 @final
@@ -589,6 +657,7 @@ class VNNType(Currency):
 
 
 VNN: Final = VNNType()
+__currencies.add(VNN)
 
 
 @final
@@ -598,6 +667,7 @@ class XEUType(Currency):
 
 
 XEU: Final = XEUType()
+__currencies.add(XEU)
 
 
 @final
@@ -607,6 +677,7 @@ class YDDType(Currency):
 
 
 YDD: Final = YDDType()
+__currencies.add(YDD)
 
 
 @final
@@ -616,6 +687,7 @@ class YUMType(Currency):
 
 
 YUM: Final = YUMType()
+__currencies.add(YUM)
 
 
 @final
@@ -625,6 +697,7 @@ class YUNType(Currency):
 
 
 YUN: Final = YUNType()
+__currencies.add(YUN)
 
 
 @final
@@ -634,6 +707,7 @@ class ZALType(Currency):
 
 
 ZAL: Final = ZALType()
+__currencies.add(ZAL)
 
 
 @final
@@ -643,6 +717,7 @@ class ZMKType(Currency):
 
 
 ZMK: Final = ZMKType()
+__currencies.add(ZMK)
 
 
 @final
@@ -652,6 +727,7 @@ class ZRNType(Currency):
 
 
 ZRN: Final = ZRNType()
+__currencies.add(ZRN)
 
 
 @final
@@ -661,6 +737,7 @@ class ZRZType(Currency):
 
 
 ZRZ: Final = ZRZType()
+__currencies.add(ZRZ)
 
 
 @final
@@ -670,6 +747,7 @@ class ZWDType(Currency):
 
 
 ZWD: Final = ZWDType()
+__currencies.add(ZWD)
 
 
 @final
@@ -679,6 +757,7 @@ class ZWLType(Currency):
 
 
 ZWL: Final = ZWLType()
+__currencies.add(ZWL)
 
 
 @final
@@ -688,6 +767,7 @@ class ZWRType(Currency):
 
 
 ZWR: Final = ZWRType()
+__currencies.add(ZWR)
 
 
 @final
@@ -697,6 +777,7 @@ class AOKType(Currency):
 
 
 AOK: Final = AOKType()
+__currencies.add(AOK)
 
 
 @final
@@ -706,6 +787,7 @@ class ARLType(Currency):
 
 
 ARL: Final = ARLType()
+__currencies.add(ARL)
 
 
 @final
@@ -715,6 +797,7 @@ class ARMType(Currency):
 
 
 ARM: Final = ARMType()
+__currencies.add(ARM)
 
 
 @final
@@ -724,6 +807,7 @@ class BANType(Currency):
 
 
 BAN: Final = BANType()
+__currencies.add(BAN)
 
 
 @final
@@ -733,6 +817,7 @@ class BECType(Currency):
 
 
 BEC: Final = BECType()
+__currencies.add(BEC)
 
 
 @final
@@ -742,6 +827,7 @@ class BELType(Currency):
 
 
 BEL: Final = BELType()
+__currencies.add(BEL)
 
 
 @final
@@ -751,6 +837,7 @@ class BGMType(Currency):
 
 
 BGM: Final = BGMType()
+__currencies.add(BGM)
 
 
 @final
@@ -760,6 +847,7 @@ class BGOType(Currency):
 
 
 BGO: Final = BGOType()
+__currencies.add(BGO)
 
 
 @final
@@ -769,6 +857,7 @@ class BOLType(Currency):
 
 
 BOL: Final = BOLType()
+__currencies.add(BOL)
 
 
 @final
@@ -778,6 +867,7 @@ class BOPType(Currency):
 
 
 BOP: Final = BOPType()
+__currencies.add(BOP)
 
 
 @final
@@ -787,6 +877,7 @@ class BRBType(Currency):
 
 
 BRB: Final = BRBType()
+__currencies.add(BRB)
 
 
 @final
@@ -796,6 +887,7 @@ class BRZType(Currency):
 
 
 BRZ: Final = BRZType()
+__currencies.add(BRZ)
 
 
 @final
@@ -805,6 +897,7 @@ class BUKType(Currency):
 
 
 BUK: Final = BUKType()
+__currencies.add(BUK)
 
 
 @final
@@ -814,6 +907,7 @@ class BYBType(Currency):
 
 
 BYB: Final = BYBType()
+__currencies.add(BYB)
 
 
 @final
@@ -823,6 +917,7 @@ class CNHType(Currency):
 
 
 CNH: Final = CNHType()
+__currencies.add(CNH)
 
 
 @final
@@ -832,6 +927,7 @@ class CNXType(Currency):
 
 
 CNX: Final = CNXType()
+__currencies.add(CNX)
 
 
 @final
@@ -841,6 +937,7 @@ class GEKType(Currency):
 
 
 GEK: Final = GEKType()
+__currencies.add(GEK)
 
 
 @final
@@ -850,6 +947,7 @@ class GNSType(Currency):
 
 
 GNS: Final = GNSType()
+__currencies.add(GNS)
 
 
 @final
@@ -859,6 +957,7 @@ class GQEType(Currency):
 
 
 GQE: Final = GQEType()
+__currencies.add(GQE)
 
 
 @final
@@ -868,6 +967,7 @@ class GWEType(Currency):
 
 
 GWE: Final = GWEType()
+__currencies.add(GWE)
 
 
 @final
@@ -877,6 +977,7 @@ class ILPType(Currency):
 
 
 ILP: Final = ILPType()
+__currencies.add(ILP)
 
 
 @final
@@ -886,6 +987,7 @@ class ILRType(Currency):
 
 
 ILR: Final = ILRType()
+__currencies.add(ILR)
 
 
 @final
@@ -895,6 +997,7 @@ class ISJType(Currency):
 
 
 ISJ: Final = ISJType()
+__currencies.add(ISJ)
 
 
 @final
@@ -904,6 +1007,7 @@ class KRHType(Currency):
 
 
 KRH: Final = KRHType()
+__currencies.add(KRH)
 
 
 @final
@@ -913,6 +1017,7 @@ class KROType(Currency):
 
 
 KRO: Final = KROType()
+__currencies.add(KRO)
 
 
 @final
@@ -922,6 +1027,7 @@ class LTTType(Currency):
 
 
 LTT: Final = LTTType()
+__currencies.add(LTT)
 
 
 @final
@@ -931,6 +1037,7 @@ class LUCType(Currency):
 
 
 LUC: Final = LUCType()
+__currencies.add(LUC)
 
 
 @final
@@ -940,6 +1047,7 @@ class LULType(Currency):
 
 
 LUL: Final = LULType()
+__currencies.add(LUL)
 
 
 @final
@@ -949,6 +1057,7 @@ class LVRType(Currency):
 
 
 LVR: Final = LVRType()
+__currencies.add(LVR)
 
 
 @final
@@ -958,6 +1067,7 @@ class MAFType(Currency):
 
 
 MAF: Final = MAFType()
+__currencies.add(MAF)
 
 
 @final
@@ -967,6 +1077,7 @@ class MCFType(Currency):
 
 
 MCF: Final = MCFType()
+__currencies.add(MCF)
 
 
 @final
@@ -976,6 +1087,7 @@ class MDCType(Currency):
 
 
 MDC: Final = MDCType()
+__currencies.add(MDC)
 
 
 @final
@@ -985,6 +1097,7 @@ class MKNType(Currency):
 
 
 MKN: Final = MKNType()
+__currencies.add(MKN)
 
 
 @final
@@ -994,6 +1107,7 @@ class MRUType(Currency):
 
 
 MRU: Final = MRUType()
+__currencies.add(MRU)
 
 
 @final
@@ -1003,6 +1117,7 @@ class MTPType(Currency):
 
 
 MTP: Final = MTPType()
+__currencies.add(MTP)
 
 
 @final
@@ -1012,6 +1127,7 @@ class MVPType(Currency):
 
 
 MVP: Final = MVPType()
+__currencies.add(MVP)
 
 
 @final
@@ -1021,6 +1137,7 @@ class MXPType(Currency):
 
 
 MXP: Final = MXPType()
+__currencies.add(MXP)
 
 
 @final
@@ -1030,6 +1147,7 @@ class MZEType(Currency):
 
 
 MZE: Final = MZEType()
+__currencies.add(MZE)
 
 
 @final
@@ -1039,6 +1157,7 @@ class NICType(Currency):
 
 
 NIC: Final = NICType()
+__currencies.add(NIC)
 
 
 @final
@@ -1048,6 +1167,7 @@ class PESType(Currency):
 
 
 PES: Final = PESType()
+__currencies.add(PES)
 
 
 @final
@@ -1057,6 +1177,7 @@ class RHDType(Currency):
 
 
 RHD: Final = RHDType()
+__currencies.add(RHD)
 
 
 @final
@@ -1066,6 +1187,7 @@ class SDPType(Currency):
 
 
 SDP: Final = SDPType()
+__currencies.add(SDP)
 
 
 @final
@@ -1075,6 +1197,7 @@ class STNType(Currency):
 
 
 STN: Final = STNType()
+__currencies.add(STN)
 
 
 @final
@@ -1084,6 +1207,7 @@ class SURType(Currency):
 
 
 SUR: Final = SURType()
+__currencies.add(SUR)
 
 
 @final
@@ -1093,6 +1217,7 @@ class UGSType(Currency):
 
 
 UGS: Final = UGSType()
+__currencies.add(UGS)
 
 
 @final
@@ -1102,6 +1227,7 @@ class UYPType(Currency):
 
 
 UYP: Final = UYPType()
+__currencies.add(UYP)
 
 
 @final
@@ -1111,6 +1237,7 @@ class UYWType(Currency):
 
 
 UYW: Final = UYWType()
+__currencies.add(UYW)
 
 
 @final
@@ -1120,6 +1247,7 @@ class VESType(Currency):
 
 
 VES: Final = VESType()
+__currencies.add(VES)
 
 
 @final
@@ -1129,6 +1257,7 @@ class XREType(Currency):
 
 
 XRE: Final = XREType()
+__currencies.add(XRE)
 
 
 @final
@@ -1138,6 +1267,7 @@ class YUDType(Currency):
 
 
 YUD: Final = YUDType()
+__currencies.add(YUD)
 
 
 @final
@@ -1147,6 +1277,7 @@ class YURType(Currency):
 
 
 YUR: Final = YURType()
+__currencies.add(YUR)
 
 
 @final
@@ -1156,6 +1287,7 @@ class AEDType(Currency):
 
 
 AED: Final = AEDType()
+__currencies.add(AED)
 
 
 @final
@@ -1165,6 +1297,7 @@ class AFNType(Currency):
 
 
 AFN: Final = AFNType()
+__currencies.add(AFN)
 
 
 @final
@@ -1174,6 +1307,7 @@ class ALLType(Currency):
 
 
 ALL: Final = ALLType()
+__currencies.add(ALL)
 
 
 @final
@@ -1183,6 +1317,7 @@ class AMDType(Currency):
 
 
 AMD: Final = AMDType()
+__currencies.add(AMD)
 
 
 @final
@@ -1192,6 +1327,7 @@ class ANGType(Currency):
 
 
 ANG: Final = ANGType()
+__currencies.add(ANG)
 
 
 @final
@@ -1201,6 +1337,7 @@ class AOAType(Currency):
 
 
 AOA: Final = AOAType()
+__currencies.add(AOA)
 
 
 @final
@@ -1210,6 +1347,7 @@ class ARSType(Currency):
 
 
 ARS: Final = ARSType()
+__currencies.add(ARS)
 
 
 @final
@@ -1219,6 +1357,7 @@ class AUDType(Currency):
 
 
 AUD: Final = AUDType()
+__currencies.add(AUD)
 
 
 @final
@@ -1228,6 +1367,7 @@ class AWGType(Currency):
 
 
 AWG: Final = AWGType()
+__currencies.add(AWG)
 
 
 @final
@@ -1237,6 +1377,7 @@ class AZNType(Currency):
 
 
 AZN: Final = AZNType()
+__currencies.add(AZN)
 
 
 @final
@@ -1246,6 +1387,7 @@ class BAMType(Currency):
 
 
 BAM: Final = BAMType()
+__currencies.add(BAM)
 
 
 @final
@@ -1255,6 +1397,7 @@ class BBDType(Currency):
 
 
 BBD: Final = BBDType()
+__currencies.add(BBD)
 
 
 @final
@@ -1264,6 +1407,7 @@ class BDTType(Currency):
 
 
 BDT: Final = BDTType()
+__currencies.add(BDT)
 
 
 @final
@@ -1273,6 +1417,7 @@ class BGNType(Currency):
 
 
 BGN: Final = BGNType()
+__currencies.add(BGN)
 
 
 @final
@@ -1282,6 +1427,7 @@ class BHDType(Currency):
 
 
 BHD: Final = BHDType()
+__currencies.add(BHD)
 
 
 @final
@@ -1291,6 +1437,7 @@ class BIFType(Currency):
 
 
 BIF: Final = BIFType()
+__currencies.add(BIF)
 
 
 @final
@@ -1300,6 +1447,7 @@ class BMDType(Currency):
 
 
 BMD: Final = BMDType()
+__currencies.add(BMD)
 
 
 @final
@@ -1309,6 +1457,7 @@ class BNDType(Currency):
 
 
 BND: Final = BNDType()
+__currencies.add(BND)
 
 
 @final
@@ -1318,6 +1467,7 @@ class BOBType(Currency):
 
 
 BOB: Final = BOBType()
+__currencies.add(BOB)
 
 
 @final
@@ -1327,6 +1477,7 @@ class BOVType(Currency):
 
 
 BOV: Final = BOVType()
+__currencies.add(BOV)
 
 
 @final
@@ -1336,6 +1487,7 @@ class BRLType(Currency):
 
 
 BRL: Final = BRLType()
+__currencies.add(BRL)
 
 
 @final
@@ -1345,6 +1497,7 @@ class BSDType(Currency):
 
 
 BSD: Final = BSDType()
+__currencies.add(BSD)
 
 
 @final
@@ -1354,6 +1507,7 @@ class BTNType(Currency):
 
 
 BTN: Final = BTNType()
+__currencies.add(BTN)
 
 
 @final
@@ -1363,6 +1517,7 @@ class BWPType(Currency):
 
 
 BWP: Final = BWPType()
+__currencies.add(BWP)
 
 
 @final
@@ -1372,6 +1527,7 @@ class BYNType(Currency):
 
 
 BYN: Final = BYNType()
+__currencies.add(BYN)
 
 
 @final
@@ -1381,6 +1537,7 @@ class BZDType(Currency):
 
 
 BZD: Final = BZDType()
+__currencies.add(BZD)
 
 
 @final
@@ -1390,6 +1547,7 @@ class CADType(Currency):
 
 
 CAD: Final = CADType()
+__currencies.add(CAD)
 
 
 @final
@@ -1399,6 +1557,7 @@ class CDFType(Currency):
 
 
 CDF: Final = CDFType()
+__currencies.add(CDF)
 
 
 @final
@@ -1408,6 +1567,7 @@ class CHEType(Currency):
 
 
 CHE: Final = CHEType()
+__currencies.add(CHE)
 
 
 @final
@@ -1417,6 +1577,7 @@ class CHFType(Currency):
 
 
 CHF: Final = CHFType()
+__currencies.add(CHF)
 
 
 @final
@@ -1426,6 +1587,7 @@ class CHWType(Currency):
 
 
 CHW: Final = CHWType()
+__currencies.add(CHW)
 
 
 @final
@@ -1435,6 +1597,7 @@ class CLFType(Currency):
 
 
 CLF: Final = CLFType()
+__currencies.add(CLF)
 
 
 @final
@@ -1444,6 +1607,7 @@ class CLPType(Currency):
 
 
 CLP: Final = CLPType()
+__currencies.add(CLP)
 
 
 @final
@@ -1453,6 +1617,7 @@ class CNYType(Currency):
 
 
 CNY: Final = CNYType()
+__currencies.add(CNY)
 
 
 @final
@@ -1462,6 +1627,7 @@ class COPType(Currency):
 
 
 COP: Final = COPType()
+__currencies.add(COP)
 
 
 @final
@@ -1471,6 +1637,7 @@ class COUType(Currency):
 
 
 COU: Final = COUType()
+__currencies.add(COU)
 
 
 @final
@@ -1480,6 +1647,7 @@ class CRCType(Currency):
 
 
 CRC: Final = CRCType()
+__currencies.add(CRC)
 
 
 @final
@@ -1489,6 +1657,7 @@ class CUCType(Currency):
 
 
 CUC: Final = CUCType()
+__currencies.add(CUC)
 
 
 @final
@@ -1498,6 +1667,7 @@ class CUPType(Currency):
 
 
 CUP: Final = CUPType()
+__currencies.add(CUP)
 
 
 @final
@@ -1507,6 +1677,7 @@ class CVEType(Currency):
 
 
 CVE: Final = CVEType()
+__currencies.add(CVE)
 
 
 @final
@@ -1516,6 +1687,7 @@ class CZKType(Currency):
 
 
 CZK: Final = CZKType()
+__currencies.add(CZK)
 
 
 @final
@@ -1525,6 +1697,7 @@ class DJFType(Currency):
 
 
 DJF: Final = DJFType()
+__currencies.add(DJF)
 
 
 @final
@@ -1534,6 +1707,7 @@ class DKKType(Currency):
 
 
 DKK: Final = DKKType()
+__currencies.add(DKK)
 
 
 @final
@@ -1543,6 +1717,7 @@ class DOPType(Currency):
 
 
 DOP: Final = DOPType()
+__currencies.add(DOP)
 
 
 @final
@@ -1552,6 +1727,7 @@ class DZDType(Currency):
 
 
 DZD: Final = DZDType()
+__currencies.add(DZD)
 
 
 @final
@@ -1561,6 +1737,7 @@ class EGPType(Currency):
 
 
 EGP: Final = EGPType()
+__currencies.add(EGP)
 
 
 @final
@@ -1570,6 +1747,7 @@ class ERNType(Currency):
 
 
 ERN: Final = ERNType()
+__currencies.add(ERN)
 
 
 @final
@@ -1579,6 +1757,7 @@ class ETBType(Currency):
 
 
 ETB: Final = ETBType()
+__currencies.add(ETB)
 
 
 @final
@@ -1588,6 +1767,7 @@ class EURType(Currency):
 
 
 EUR: Final = EURType()
+__currencies.add(EUR)
 
 
 @final
@@ -1597,6 +1777,7 @@ class FJDType(Currency):
 
 
 FJD: Final = FJDType()
+__currencies.add(FJD)
 
 
 @final
@@ -1606,6 +1787,7 @@ class FKPType(Currency):
 
 
 FKP: Final = FKPType()
+__currencies.add(FKP)
 
 
 @final
@@ -1615,6 +1797,7 @@ class GBPType(Currency):
 
 
 GBP: Final = GBPType()
+__currencies.add(GBP)
 
 
 @final
@@ -1624,6 +1807,7 @@ class GELType(Currency):
 
 
 GEL: Final = GELType()
+__currencies.add(GEL)
 
 
 @final
@@ -1633,6 +1817,7 @@ class GHSType(Currency):
 
 
 GHS: Final = GHSType()
+__currencies.add(GHS)
 
 
 @final
@@ -1642,6 +1827,7 @@ class GIPType(Currency):
 
 
 GIP: Final = GIPType()
+__currencies.add(GIP)
 
 
 @final
@@ -1651,6 +1837,7 @@ class GMDType(Currency):
 
 
 GMD: Final = GMDType()
+__currencies.add(GMD)
 
 
 @final
@@ -1660,6 +1847,7 @@ class GNFType(Currency):
 
 
 GNF: Final = GNFType()
+__currencies.add(GNF)
 
 
 @final
@@ -1669,6 +1857,7 @@ class GTQType(Currency):
 
 
 GTQ: Final = GTQType()
+__currencies.add(GTQ)
 
 
 @final
@@ -1678,6 +1867,7 @@ class GYDType(Currency):
 
 
 GYD: Final = GYDType()
+__currencies.add(GYD)
 
 
 @final
@@ -1687,6 +1877,7 @@ class HKDType(Currency):
 
 
 HKD: Final = HKDType()
+__currencies.add(HKD)
 
 
 @final
@@ -1696,6 +1887,7 @@ class HNLType(Currency):
 
 
 HNL: Final = HNLType()
+__currencies.add(HNL)
 
 
 @final
@@ -1705,6 +1897,7 @@ class HRKType(Currency):
 
 
 HRK: Final = HRKType()
+__currencies.add(HRK)
 
 
 @final
@@ -1714,6 +1907,7 @@ class HTGType(Currency):
 
 
 HTG: Final = HTGType()
+__currencies.add(HTG)
 
 
 @final
@@ -1723,6 +1917,7 @@ class HUFType(Currency):
 
 
 HUF: Final = HUFType()
+__currencies.add(HUF)
 
 
 @final
@@ -1732,6 +1927,7 @@ class IDRType(Currency):
 
 
 IDR: Final = IDRType()
+__currencies.add(IDR)
 
 
 @final
@@ -1741,6 +1937,7 @@ class ILSType(Currency):
 
 
 ILS: Final = ILSType()
+__currencies.add(ILS)
 
 
 @final
@@ -1750,6 +1947,7 @@ class IMPType(Currency):
 
 
 IMP: Final = IMPType()
+__currencies.add(IMP)
 
 
 @final
@@ -1759,6 +1957,7 @@ class INRType(Currency):
 
 
 INR: Final = INRType()
+__currencies.add(INR)
 
 
 @final
@@ -1768,6 +1967,7 @@ class IQDType(Currency):
 
 
 IQD: Final = IQDType()
+__currencies.add(IQD)
 
 
 @final
@@ -1777,6 +1977,7 @@ class IRRType(Currency):
 
 
 IRR: Final = IRRType()
+__currencies.add(IRR)
 
 
 @final
@@ -1786,6 +1987,7 @@ class ISKType(Currency):
 
 
 ISK: Final = ISKType()
+__currencies.add(ISK)
 
 
 @final
@@ -1795,6 +1997,7 @@ class JMDType(Currency):
 
 
 JMD: Final = JMDType()
+__currencies.add(JMD)
 
 
 @final
@@ -1804,6 +2007,7 @@ class JODType(Currency):
 
 
 JOD: Final = JODType()
+__currencies.add(JOD)
 
 
 @final
@@ -1813,6 +2017,7 @@ class JPYType(Currency):
 
 
 JPY: Final = JPYType()
+__currencies.add(JPY)
 
 
 @final
@@ -1822,6 +2027,7 @@ class KESType(Currency):
 
 
 KES: Final = KESType()
+__currencies.add(KES)
 
 
 @final
@@ -1831,6 +2037,7 @@ class KGSType(Currency):
 
 
 KGS: Final = KGSType()
+__currencies.add(KGS)
 
 
 @final
@@ -1840,6 +2047,7 @@ class KHRType(Currency):
 
 
 KHR: Final = KHRType()
+__currencies.add(KHR)
 
 
 @final
@@ -1849,6 +2057,7 @@ class KMFType(Currency):
 
 
 KMF: Final = KMFType()
+__currencies.add(KMF)
 
 
 @final
@@ -1858,6 +2067,7 @@ class KPWType(Currency):
 
 
 KPW: Final = KPWType()
+__currencies.add(KPW)
 
 
 @final
@@ -1867,6 +2077,7 @@ class KRWType(Currency):
 
 
 KRW: Final = KRWType()
+__currencies.add(KRW)
 
 
 @final
@@ -1876,6 +2087,7 @@ class KWDType(Currency):
 
 
 KWD: Final = KWDType()
+__currencies.add(KWD)
 
 
 @final
@@ -1885,6 +2097,7 @@ class KYDType(Currency):
 
 
 KYD: Final = KYDType()
+__currencies.add(KYD)
 
 
 @final
@@ -1894,6 +2107,7 @@ class KZTType(Currency):
 
 
 KZT: Final = KZTType()
+__currencies.add(KZT)
 
 
 @final
@@ -1903,6 +2117,7 @@ class LAKType(Currency):
 
 
 LAK: Final = LAKType()
+__currencies.add(LAK)
 
 
 @final
@@ -1912,6 +2127,7 @@ class LBPType(Currency):
 
 
 LBP: Final = LBPType()
+__currencies.add(LBP)
 
 
 @final
@@ -1921,6 +2137,7 @@ class LKRType(Currency):
 
 
 LKR: Final = LKRType()
+__currencies.add(LKR)
 
 
 @final
@@ -1930,6 +2147,7 @@ class LRDType(Currency):
 
 
 LRD: Final = LRDType()
+__currencies.add(LRD)
 
 
 @final
@@ -1939,6 +2157,7 @@ class LSLType(Currency):
 
 
 LSL: Final = LSLType()
+__currencies.add(LSL)
 
 
 @final
@@ -1948,6 +2167,7 @@ class LYDType(Currency):
 
 
 LYD: Final = LYDType()
+__currencies.add(LYD)
 
 
 @final
@@ -1957,6 +2177,7 @@ class MADType(Currency):
 
 
 MAD: Final = MADType()
+__currencies.add(MAD)
 
 
 @final
@@ -1966,6 +2187,7 @@ class MDLType(Currency):
 
 
 MDL: Final = MDLType()
+__currencies.add(MDL)
 
 
 @final
@@ -1975,6 +2197,7 @@ class MGAType(Currency):
 
 
 MGA: Final = MGAType()
+__currencies.add(MGA)
 
 
 @final
@@ -1984,6 +2207,7 @@ class MKDType(Currency):
 
 
 MKD: Final = MKDType()
+__currencies.add(MKD)
 
 
 @final
@@ -1993,6 +2217,7 @@ class MMKType(Currency):
 
 
 MMK: Final = MMKType()
+__currencies.add(MMK)
 
 
 @final
@@ -2002,6 +2227,7 @@ class MNTType(Currency):
 
 
 MNT: Final = MNTType()
+__currencies.add(MNT)
 
 
 @final
@@ -2011,6 +2237,7 @@ class MOPType(Currency):
 
 
 MOP: Final = MOPType()
+__currencies.add(MOP)
 
 
 @final
@@ -2020,6 +2247,7 @@ class MURType(Currency):
 
 
 MUR: Final = MURType()
+__currencies.add(MUR)
 
 
 @final
@@ -2029,6 +2257,7 @@ class MVRType(Currency):
 
 
 MVR: Final = MVRType()
+__currencies.add(MVR)
 
 
 @final
@@ -2038,6 +2267,7 @@ class MWKType(Currency):
 
 
 MWK: Final = MWKType()
+__currencies.add(MWK)
 
 
 @final
@@ -2047,6 +2277,7 @@ class MXNType(Currency):
 
 
 MXN: Final = MXNType()
+__currencies.add(MXN)
 
 
 @final
@@ -2056,6 +2287,7 @@ class MXVType(Currency):
 
 
 MXV: Final = MXVType()
+__currencies.add(MXV)
 
 
 @final
@@ -2065,6 +2297,7 @@ class MYRType(Currency):
 
 
 MYR: Final = MYRType()
+__currencies.add(MYR)
 
 
 @final
@@ -2074,6 +2307,7 @@ class MZNType(Currency):
 
 
 MZN: Final = MZNType()
+__currencies.add(MZN)
 
 
 @final
@@ -2083,6 +2317,7 @@ class NADType(Currency):
 
 
 NAD: Final = NADType()
+__currencies.add(NAD)
 
 
 @final
@@ -2092,6 +2327,7 @@ class NGNType(Currency):
 
 
 NGN: Final = NGNType()
+__currencies.add(NGN)
 
 
 @final
@@ -2101,6 +2337,7 @@ class NIOType(Currency):
 
 
 NIO: Final = NIOType()
+__currencies.add(NIO)
 
 
 @final
@@ -2110,6 +2347,7 @@ class NOKType(Currency):
 
 
 NOK: Final = NOKType()
+__currencies.add(NOK)
 
 
 @final
@@ -2119,6 +2357,7 @@ class NPRType(Currency):
 
 
 NPR: Final = NPRType()
+__currencies.add(NPR)
 
 
 @final
@@ -2128,6 +2367,7 @@ class NZDType(Currency):
 
 
 NZD: Final = NZDType()
+__currencies.add(NZD)
 
 
 @final
@@ -2137,6 +2377,7 @@ class OMRType(Currency):
 
 
 OMR: Final = OMRType()
+__currencies.add(OMR)
 
 
 @final
@@ -2146,6 +2387,7 @@ class PABType(Currency):
 
 
 PAB: Final = PABType()
+__currencies.add(PAB)
 
 
 @final
@@ -2155,6 +2397,7 @@ class PENType(Currency):
 
 
 PEN: Final = PENType()
+__currencies.add(PEN)
 
 
 @final
@@ -2164,6 +2407,7 @@ class PGKType(Currency):
 
 
 PGK: Final = PGKType()
+__currencies.add(PGK)
 
 
 @final
@@ -2173,6 +2417,7 @@ class PHPType(Currency):
 
 
 PHP: Final = PHPType()
+__currencies.add(PHP)
 
 
 @final
@@ -2182,6 +2427,7 @@ class PKRType(Currency):
 
 
 PKR: Final = PKRType()
+__currencies.add(PKR)
 
 
 @final
@@ -2191,6 +2437,7 @@ class PLNType(Currency):
 
 
 PLN: Final = PLNType()
+__currencies.add(PLN)
 
 
 @final
@@ -2200,6 +2447,7 @@ class PYGType(Currency):
 
 
 PYG: Final = PYGType()
+__currencies.add(PYG)
 
 
 @final
@@ -2209,6 +2457,7 @@ class QARType(Currency):
 
 
 QAR: Final = QARType()
+__currencies.add(QAR)
 
 
 @final
@@ -2218,6 +2467,7 @@ class RONType(Currency):
 
 
 RON: Final = RONType()
+__currencies.add(RON)
 
 
 @final
@@ -2227,6 +2477,7 @@ class RSDType(Currency):
 
 
 RSD: Final = RSDType()
+__currencies.add(RSD)
 
 
 @final
@@ -2236,6 +2487,7 @@ class RUBType(Currency):
 
 
 RUB: Final = RUBType()
+__currencies.add(RUB)
 
 
 @final
@@ -2245,6 +2497,7 @@ class RWFType(Currency):
 
 
 RWF: Final = RWFType()
+__currencies.add(RWF)
 
 
 @final
@@ -2254,6 +2507,7 @@ class SARType(Currency):
 
 
 SAR: Final = SARType()
+__currencies.add(SAR)
 
 
 @final
@@ -2263,6 +2517,7 @@ class SBDType(Currency):
 
 
 SBD: Final = SBDType()
+__currencies.add(SBD)
 
 
 @final
@@ -2272,6 +2527,7 @@ class SCRType(Currency):
 
 
 SCR: Final = SCRType()
+__currencies.add(SCR)
 
 
 @final
@@ -2281,6 +2537,7 @@ class SDGType(Currency):
 
 
 SDG: Final = SDGType()
+__currencies.add(SDG)
 
 
 @final
@@ -2290,6 +2547,7 @@ class SEKType(Currency):
 
 
 SEK: Final = SEKType()
+__currencies.add(SEK)
 
 
 @final
@@ -2299,6 +2557,7 @@ class SGDType(Currency):
 
 
 SGD: Final = SGDType()
+__currencies.add(SGD)
 
 
 @final
@@ -2308,6 +2567,7 @@ class SHPType(Currency):
 
 
 SHP: Final = SHPType()
+__currencies.add(SHP)
 
 
 @final
@@ -2317,6 +2577,7 @@ class SLLType(Currency):
 
 
 SLL: Final = SLLType()
+__currencies.add(SLL)
 
 
 @final
@@ -2326,6 +2587,7 @@ class SOSType(Currency):
 
 
 SOS: Final = SOSType()
+__currencies.add(SOS)
 
 
 @final
@@ -2335,6 +2597,7 @@ class SRDType(Currency):
 
 
 SRD: Final = SRDType()
+__currencies.add(SRD)
 
 
 @final
@@ -2344,6 +2607,7 @@ class SSPType(Currency):
 
 
 SSP: Final = SSPType()
+__currencies.add(SSP)
 
 
 @final
@@ -2353,6 +2617,7 @@ class SVCType(Currency):
 
 
 SVC: Final = SVCType()
+__currencies.add(SVC)
 
 
 @final
@@ -2362,6 +2627,7 @@ class SYPType(Currency):
 
 
 SYP: Final = SYPType()
+__currencies.add(SYP)
 
 
 @final
@@ -2371,6 +2637,7 @@ class SZLType(Currency):
 
 
 SZL: Final = SZLType()
+__currencies.add(SZL)
 
 
 @final
@@ -2380,6 +2647,7 @@ class THBType(Currency):
 
 
 THB: Final = THBType()
+__currencies.add(THB)
 
 
 @final
@@ -2389,6 +2657,7 @@ class TJSType(Currency):
 
 
 TJS: Final = TJSType()
+__currencies.add(TJS)
 
 
 @final
@@ -2398,6 +2667,7 @@ class TMTType(Currency):
 
 
 TMT: Final = TMTType()
+__currencies.add(TMT)
 
 
 @final
@@ -2407,6 +2677,7 @@ class TNDType(Currency):
 
 
 TND: Final = TNDType()
+__currencies.add(TND)
 
 
 @final
@@ -2416,6 +2687,7 @@ class TOPType(Currency):
 
 
 TOP: Final = TOPType()
+__currencies.add(TOP)
 
 
 @final
@@ -2425,6 +2697,7 @@ class TRYType(Currency):
 
 
 TRY: Final = TRYType()
+__currencies.add(TRY)
 
 
 @final
@@ -2434,6 +2707,7 @@ class TTDType(Currency):
 
 
 TTD: Final = TTDType()
+__currencies.add(TTD)
 
 
 @final
@@ -2443,6 +2717,7 @@ class TVDType(Currency):
 
 
 TVD: Final = TVDType()
+__currencies.add(TVD)
 
 
 @final
@@ -2452,6 +2727,7 @@ class TWDType(Currency):
 
 
 TWD: Final = TWDType()
+__currencies.add(TWD)
 
 
 @final
@@ -2461,6 +2737,7 @@ class TZSType(Currency):
 
 
 TZS: Final = TZSType()
+__currencies.add(TZS)
 
 
 @final
@@ -2470,6 +2747,7 @@ class UAHType(Currency):
 
 
 UAH: Final = UAHType()
+__currencies.add(UAH)
 
 
 @final
@@ -2479,6 +2757,7 @@ class UGXType(Currency):
 
 
 UGX: Final = UGXType()
+__currencies.add(UGX)
 
 
 @final
@@ -2488,6 +2767,7 @@ class USDType(Currency):
 
 
 USD: Final = USDType()
+__currencies.add(USD)
 
 
 @final
@@ -2497,6 +2777,7 @@ class USNType(Currency):
 
 
 USN: Final = USNType()
+__currencies.add(USN)
 
 
 @final
@@ -2506,6 +2787,7 @@ class UYIType(Currency):
 
 
 UYI: Final = UYIType()
+__currencies.add(UYI)
 
 
 @final
@@ -2515,6 +2797,7 @@ class UYUType(Currency):
 
 
 UYU: Final = UYUType()
+__currencies.add(UYU)
 
 
 @final
@@ -2524,6 +2807,7 @@ class UZSType(Currency):
 
 
 UZS: Final = UZSType()
+__currencies.add(UZS)
 
 
 @final
@@ -2533,6 +2817,7 @@ class VNDType(Currency):
 
 
 VND: Final = VNDType()
+__currencies.add(VND)
 
 
 @final
@@ -2542,6 +2827,7 @@ class VUVType(Currency):
 
 
 VUV: Final = VUVType()
+__currencies.add(VUV)
 
 
 @final
@@ -2551,6 +2837,7 @@ class WSTType(Currency):
 
 
 WST: Final = WSTType()
+__currencies.add(WST)
 
 
 @final
@@ -2560,6 +2847,7 @@ class XAFType(Currency):
 
 
 XAF: Final = XAFType()
+__currencies.add(XAF)
 
 
 @final
@@ -2569,6 +2857,7 @@ class XAGType(Currency):
 
 
 XAG: Final = XAGType()
+__currencies.add(XAG)
 
 
 @final
@@ -2578,6 +2867,7 @@ class XAUType(Currency):
 
 
 XAU: Final = XAUType()
+__currencies.add(XAU)
 
 
 @final
@@ -2587,6 +2877,7 @@ class XBAType(Currency):
 
 
 XBA: Final = XBAType()
+__currencies.add(XBA)
 
 
 @final
@@ -2596,6 +2887,7 @@ class XBBType(Currency):
 
 
 XBB: Final = XBBType()
+__currencies.add(XBB)
 
 
 @final
@@ -2605,6 +2897,7 @@ class XBCType(Currency):
 
 
 XBC: Final = XBCType()
+__currencies.add(XBC)
 
 
 @final
@@ -2614,6 +2907,7 @@ class XBDType(Currency):
 
 
 XBD: Final = XBDType()
+__currencies.add(XBD)
 
 
 @final
@@ -2623,6 +2917,7 @@ class XCDType(Currency):
 
 
 XCD: Final = XCDType()
+__currencies.add(XCD)
 
 
 @final
@@ -2632,6 +2927,7 @@ class XDRType(Currency):
 
 
 XDR: Final = XDRType()
+__currencies.add(XDR)
 
 
 @final
@@ -2641,6 +2937,7 @@ class XFOType(Currency):
 
 
 XFO: Final = XFOType()
+__currencies.add(XFO)
 
 
 @final
@@ -2650,6 +2947,7 @@ class XFUType(Currency):
 
 
 XFU: Final = XFUType()
+__currencies.add(XFU)
 
 
 @final
@@ -2659,6 +2957,7 @@ class XOFType(Currency):
 
 
 XOF: Final = XOFType()
+__currencies.add(XOF)
 
 
 @final
@@ -2668,6 +2967,7 @@ class XPDType(Currency):
 
 
 XPD: Final = XPDType()
+__currencies.add(XPD)
 
 
 @final
@@ -2677,6 +2977,7 @@ class XPFType(Currency):
 
 
 XPF: Final = XPFType()
+__currencies.add(XPF)
 
 
 @final
@@ -2686,6 +2987,7 @@ class XPTType(Currency):
 
 
 XPT: Final = XPTType()
+__currencies.add(XPT)
 
 
 @final
@@ -2695,6 +2997,7 @@ class XSUType(Currency):
 
 
 XSU: Final = XSUType()
+__currencies.add(XSU)
 
 
 @final
@@ -2704,6 +3007,7 @@ class XTSType(Currency):
 
 
 XTS: Final = XTSType()
+__currencies.add(XTS)
 
 
 @final
@@ -2713,6 +3017,7 @@ class XUAType(Currency):
 
 
 XUA: Final = XUAType()
+__currencies.add(XUA)
 
 
 @final
@@ -2722,6 +3027,7 @@ class XXXType(Currency):
 
 
 XXX: Final = XXXType()
+__currencies.add(XXX)
 
 
 @final
@@ -2731,6 +3037,7 @@ class YERType(Currency):
 
 
 YER: Final = YERType()
+__currencies.add(YER)
 
 
 @final
@@ -2740,6 +3047,7 @@ class ZARType(Currency):
 
 
 ZAR: Final = ZARType()
+__currencies.add(ZAR)
 
 
 @final
@@ -2749,6 +3057,7 @@ class ZMWType(Currency):
 
 
 ZMW: Final = ZMWType()
+__currencies.add(ZMW)
 
 
 @final
@@ -2758,3 +3067,8 @@ class ZWNType(Currency):
 
 
 ZWN: Final = ZWNType()
+__currencies.add(ZWN)
+
+
+registry: Final[CurrencyRegistry] = __currencies.finalize()
+del __currencies
