@@ -3071,3 +3071,4 @@ __currencies.add(ZWN)
 
 
 registry: Final[CurrencyRegistry] = __currencies.finalize()
+del __currencies

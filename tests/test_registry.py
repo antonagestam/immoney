@@ -30,6 +30,16 @@ ZWN: Final = ZWNType()
 collector.add(ZWN)
 
 
+@final
+class XYZType(Currency):
+    code = "XYZ"
+    subunit = 100
+
+
+XYZ: Final = XYZType()
+collector.add(XYZ)
+
+
 custom_registry: Final = collector.finalize()
 
 
@@ -39,6 +49,7 @@ class TestCustomRegistry:
         [
             ("SEK", SEK),
             ("ZWN", ZWN),
+            ("XYZ", XYZ),
         ],
     )
     def test_can_get_currency(self, name: str, expected_instance: Currency):

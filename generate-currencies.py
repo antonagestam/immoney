@@ -29,7 +29,8 @@ __currencies.add({code})
 registry_template = """\
 
 
-default_registry: Final[CurrencyRegistry] = __currencies.finalize()
+registry: Final[CurrencyRegistry] = __currencies.finalize()
+del __currencies
 """
 
 

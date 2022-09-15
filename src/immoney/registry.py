@@ -15,5 +15,5 @@ class CurrencyCollector:
     def add(self, currency: Currency) -> None:
         self.__collection.append((currency.code, currency))
 
-    def finalize(self) -> Mapping[str, Currency]:
+    def finalize(self) -> CurrencyRegistry:
         return Map(self.__collection)
