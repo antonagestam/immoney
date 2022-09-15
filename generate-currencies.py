@@ -11,7 +11,8 @@ from typing import Final
 from typing import final
 
 from . import Currency
-from .registry import CurrencyCollector, CurrencyRegistry
+from .registry import CurrencyCollector
+from .registry import CurrencyRegistry
 
 __currencies: Final = CurrencyCollector()
 """
