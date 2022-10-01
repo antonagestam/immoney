@@ -13,13 +13,13 @@ concurrency:
 jobs:
   lint:
     name: Static analysis
-    uses: less-action/reusables/.github/workflows/pre-commit.yaml
+    uses: less-action/reusables/.github/workflows/pre-commit.yaml@main
     with:
       python-version: "3.10"
 
   check-build:
     name: Check packaging metadata
-    uses: less-action/reusables/.github/workflows/python-test-build.yaml
+    uses: less-action/reusables/.github/workflows/python-test-build.yaml@main
 
   test:
     name: Test
