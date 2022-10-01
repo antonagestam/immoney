@@ -4,6 +4,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
 concurrency:
@@ -13,13 +14,13 @@ concurrency:
 jobs:
   lint:
     name: Static analysis
-    uses: less-action/reusables/.github/workflows/pre-commit.yaml@v2
+    uses: less-action/reusables/.github/workflows/pre-commit.yaml@main
     with:
       python-version: "3.10"
 
   check-build:
     name: Check packaging metadata
-    uses: less-action/reusables/.github/workflows/python-test-build.yaml@v2
+    uses: less-action/reusables/.github/workflows/python-test-build.yaml@main
 
   test:
     name: Test
