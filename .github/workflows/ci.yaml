@@ -48,6 +48,7 @@ jobs:
           coverage report
           coverage xml
       - uses: codecov/codecov-action@v3
+        if: '!github.event.schedule'
         with:
           file: coverage.xml
           fail_ci_if_error: true
