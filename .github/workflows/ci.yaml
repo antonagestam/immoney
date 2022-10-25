@@ -63,7 +63,7 @@ jobs:
           cache: pip
           cache-dependency-path: generate-requirements.txt
           check-latest: true
-      - run: pip install -r generate-requirements.txt
+      - run: pip install --upgrade -r generate-requirements.txt
       - run: |
           python generate-currencies.py
           diff=$(git --no-pager diff)
