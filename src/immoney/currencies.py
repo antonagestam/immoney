@@ -2571,6 +2571,16 @@ __currencies.add(SHP)
 
 
 @final
+class SLEType(Currency):
+    code = "SLE"
+    subunit = 100
+
+
+SLE: Final = SLEType()
+__currencies.add(SLE)
+
+
+@final
 class SLLType(Currency):
     code = "SLL"
     subunit = 100
@@ -2808,6 +2818,16 @@ class UZSType(Currency):
 
 UZS: Final = UZSType()
 __currencies.add(UZS)
+
+
+@final
+class VEDType(Currency):
+    code = "VED"
+    subunit = 100
+
+
+VED: Final = VEDType()
+__currencies.add(VED)
 
 
 @final
