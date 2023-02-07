@@ -19,5 +19,5 @@ class InstanceCache(type):
     def __instantiate(cls, *args: object) -> object:
         return super().__call__(*args)
 
-    def __call__(cls, *args: object) -> Any:  # type: ignore[override]
+    def __call__(cls, *args: object) -> Any:
         return cls.__instantiate(*cls._normalize(*args))
