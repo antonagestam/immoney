@@ -13,6 +13,7 @@ from decimal import ROUND_UP
 from decimal import Decimal
 from fractions import Fraction
 from functools import cached_property
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import ClassVar
 from typing import Final
@@ -32,6 +33,9 @@ from .errors import InvalidSubunit
 from .errors import MoneyParseError
 from .types import ParsableMoneyValue
 from .types import PositiveDecimal
+
+if TYPE_CHECKING:
+    from pydantic_core.core_schema import CoreSchema
 
 CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 valid_subunit: Final = frozenset({1, 10, 100, 1_000, 10_000, 100_000, 1_000_000})
@@ -107,6 +111,12 @@ class Currency(Frozen, abc.ABC):
         value: Decimal | int | str,
     ) -> Overdraft[CurrencySelf]:
         return Overdraft(Money(value, self))
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, **kwargs: object) -> CoreSchema:
+        from ._pydantic import currency_schema
+
+        return currency_schema
 
 
 C = TypeVar("C", bound=Currency)
@@ -300,6 +310,12 @@ class Money(Frozen, Generic[C], metaclass=InstanceCache):
             currency,
         )
 
+    @classmethod
+    def __get_pydantic_core_schema__(cls, **kwargs: object) -> CoreSchema:
+        from ._pydantic import money_schema
+
+        return money_schema
+
 
 class Round(enum.Enum):
     """
@@ -364,6 +380,12 @@ class SubunitFraction(Frozen, Generic[C], metaclass=InstanceCache):
             rounding=rounding.value,
         )
         return Money(quantized, self.currency)
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, **kwargs: object) -> CoreSchema:
+        from ._pydantic import subunit_fraction_schema
+
+        return subunit_fraction_schema
 
 
 @final
@@ -446,3 +468,9 @@ class Overdraft(Frozen, Generic[C], metaclass=InstanceCache):
 
     def __pos__(self: Overdraft[C]) -> Overdraft[C]:
         return self
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, **kwargs: object) -> CoreSchema:
+        from ._pydantic import overdraft_schema
+
+        return overdraft_schema
