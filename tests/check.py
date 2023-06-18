@@ -1,12 +1,17 @@
-from typing import Callable, TypeVar, Final, Sequence, Generic, Iterable
-from collections import Counter, defaultdict
+from collections.abc import Callable
+from collections.abc import Iterable
+from typing import Any
+from typing import Final
+from typing import Generic
+from typing import TypeVar
 
 T = TypeVar("T")
+
 
 class Check(Generic[T]):
     def __init__(
         self,
-        required_type: type[T],
+        required_type: Any,
         predicate: Callable[[T], bool],
     ) -> None:
         self.required_type: Final = required_type
@@ -20,5 +25,6 @@ class Check(Generic[T]):
 
 def sorted_items_equal(test: Iterable[T]) -> Check[Iterable[T]]:
     def check(other: Iterable[T]) -> bool:
-        return sorted(other) == sorted(test)
+        return sorted(other) == sorted(test)  # type: ignore[type-var]
+
     return Check(Iterable, check)

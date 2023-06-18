@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 from fractions import Fraction
+from typing import Any
 from typing import Protocol
 from typing import TypedDict
 from typing import TypeVar
@@ -48,14 +49,20 @@ def currency_value_schema(registry: CurrencyRegistry) -> core_schema.LiteralSche
     return core_schema.literal_schema(expected=list(registry.keys()))
 
 
-T = TypeVar("T", Money[Currency], Overdraft[Currency], SubunitFraction[Currency])
-U = TypeVar("U", MoneyDict, OverdraftDict, SubunitFractionDict)
+T_contra = TypeVar(
+    "T_contra",
+    Money[Currency],
+    Overdraft[Currency],
+    SubunitFraction[Currency],
+    contravariant=True,
+)
+U_co = TypeVar("U_co", MoneyDict, OverdraftDict, SubunitFractionDict, covariant=True)
 
 
-class GenericCurrencyAdapter(Protocol[T, U]):
+class GenericCurrencyAdapter(Protocol[T_contra, U_co]):
     @staticmethod
     @abc.abstractmethod
-    def serialize(value: T, *args: object) -> U:
+    def serialize(value: T_contra, *args: object) -> U_co:
         ...
 
     @staticmethod
@@ -91,9 +98,13 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
     def schema_from_registry(registry: CurrencyRegistry) -> TypedDictSchema:
         return core_schema.typed_dict_schema(
             {
-                "subunits": core_schema.typed_dict_field(core_schema.int_schema(gt=0), required=True),
+                "subunits": core_schema.typed_dict_field(
+                    core_schema.int_schema(gt=0),
+                    required=True,
+                ),
                 "currency": core_schema.typed_dict_field(
-                    currency_value_schema(registry), required=True
+                    currency_value_schema(registry),
+                    required=True,
                 ),
             }
         )
@@ -102,7 +113,10 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
     def schema_from_currency(currency: Currency) -> TypedDictSchema:
         return core_schema.typed_dict_schema(
             {
-                "subunits": core_schema.typed_dict_field(core_schema.int_schema(gt=0), required=True),
+                "subunits": core_schema.typed_dict_field(
+                    core_schema.int_schema(gt=0),
+                    required=True,
+                ),
                 "currency": core_schema.typed_dict_field(
                     core_schema.literal_schema(expected=[currency.code]),
                     required=True,
@@ -164,10 +178,17 @@ class SubunitFractionAdapter(
     def schema_from_registry(registry: CurrencyRegistry) -> TypedDictSchema:
         return core_schema.typed_dict_schema(
             {
-                "numerator": core_schema.typed_dict_field(core_schema.int_schema(), required=True),
-                "denominator": core_schema.typed_dict_field(core_schema.int_schema(), required=True),
+                "numerator": core_schema.typed_dict_field(
+                    core_schema.int_schema(),
+                    required=True,
+                ),
+                "denominator": core_schema.typed_dict_field(
+                    core_schema.int_schema(),
+                    required=True,
+                ),
                 "currency": core_schema.typed_dict_field(
-                    currency_value_schema(registry), required=True,
+                    currency_value_schema(registry),
+                    required=True,
                 ),
             }
         )
@@ -176,8 +197,14 @@ class SubunitFractionAdapter(
     def schema_from_currency(currency: Currency) -> TypedDictSchema:
         return core_schema.typed_dict_schema(
             {
-                "numerator": core_schema.typed_dict_field(core_schema.int_schema(), required=True),
-                "denominator": core_schema.typed_dict_field(core_schema.int_schema(), required=True),
+                "numerator": core_schema.typed_dict_field(
+                    core_schema.int_schema(),
+                    required=True,
+                ),
+                "denominator": core_schema.typed_dict_field(
+                    core_schema.int_schema(),
+                    required=True,
+                ),
                 "currency": core_schema.typed_dict_field(
                     core_schema.literal_schema(expected=[currency.code]),
                     required=True,
@@ -236,10 +263,12 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
         return core_schema.typed_dict_schema(
             {
                 "overdraft_subunits": core_schema.typed_dict_field(
-                    core_schema.int_schema(gt=0), required=True,
+                    core_schema.int_schema(gt=0),
+                    required=True,
                 ),
                 "currency": core_schema.typed_dict_field(
-                    currency_value_schema(registry), required=True,
+                    currency_value_schema(registry),
+                    required=True,
                 ),
             }
         )
@@ -249,7 +278,8 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
         return core_schema.typed_dict_schema(
             {
                 "overdraft_subunits": core_schema.typed_dict_field(
-                    core_schema.int_schema(gt=0), required=True,
+                    core_schema.int_schema(gt=0),
+                    required=True,
                 ),
                 "currency": core_schema.typed_dict_field(
                     core_schema.literal_schema(expected=[currency.code]),
@@ -300,7 +330,7 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
 def build_generic_currency_schema(
     cls: type,
     source_type: type,
-    adapter: type[GenericCurrencyAdapter],
+    adapter: type[GenericCurrencyAdapter[Any, Any]],
 ) -> core_schema.CoreSchema:
     if source_type is cls:
         # Not specialized allow any default Currency.

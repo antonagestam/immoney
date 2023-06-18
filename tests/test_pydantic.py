@@ -18,8 +18,8 @@ from immoney.currencies import CUPType
 from immoney.currencies import INRType
 from immoney.currencies import USDType
 from immoney.currencies import registry as default_registry
-from .check import sorted_items_equal
 
+from .check import sorted_items_equal
 from .custom_currency import JCN
 from .custom_currency import MCN
 from .custom_currency import CustomCurrency
@@ -158,7 +158,7 @@ def test_can_generate_default_money_schema() -> None:
                         "exclusiveMinimum": 0,
                         "title": "Subunits",
                         "type": "integer",
-                    }
+                    },
                 },
                 "required": sorted_items_equal(["subunits", "currency"]),
                 "title": "Money",
@@ -215,7 +215,7 @@ def test_can_generate_specialized_money_schema() -> None:
                         "exclusiveMinimum": 0,
                         "title": "Subunits",
                         "type": "integer",
-                    }
+                    },
                 },
                 "required": sorted_items_equal(["subunits", "currency"]),
                 "title": "Dollars",
@@ -275,7 +275,7 @@ def test_can_generate_custom_money_schema() -> None:
                         "exclusiveMinimum": 0,
                         "title": "Subunits",
                         "type": "integer",
-                    }
+                    },
                 },
                 "required": sorted_items_equal(["subunits", "currency"]),
                 "title": "Coins",
@@ -337,10 +337,11 @@ def test_can_generate_default_subunit_fraction_schema() -> None:
                     "denominator": {
                         "title": "Denominator",
                         "type": "integer",
-
                     },
                 },
-                "required": sorted_items_equal(["currency", "numerator", "denominator"]),
+                "required": sorted_items_equal(
+                    ["currency", "numerator", "denominator"]
+                ),
                 "title": "Value Field",
                 "type": "object",
             },
@@ -411,10 +412,11 @@ def test_can_generate_custom_subunit_fraction_schema() -> None:
                     "denominator": {
                         "title": "Denominator",
                         "type": "integer",
-
                     },
                 },
-                "required": sorted_items_equal(["currency", "numerator", "denominator"]),
+                "required": sorted_items_equal(
+                    ["currency", "numerator", "denominator"]
+                ),
                 "title": "Value Field",
                 "type": "object",
             },
@@ -482,10 +484,11 @@ def test_can_generate_specialized_subunit_fraction_schema() -> None:
                     "denominator": {
                         "title": "Denominator",
                         "type": "integer",
-
                     },
                 },
-                "required": sorted_items_equal(["currency", "numerator", "denominator"]),
+                "required": sorted_items_equal(
+                    ["currency", "numerator", "denominator"]
+                ),
                 "title": "Value Field",
                 "type": "object",
             },
@@ -528,7 +531,7 @@ def test_can_generate_default_overdraft_schema() -> None:
                         "exclusiveMinimum": 0,
                     },
                 },
-                "required": sorted_items_equal(['overdraft_subunits', 'currency']),
+                "required": sorted_items_equal(["overdraft_subunits", "currency"]),
                 "title": "Overdraft",
                 "type": "object",
             },
@@ -588,7 +591,7 @@ def test_can_generate_custom_overdraft_schema() -> None:
                         "exclusiveMinimum": 0,
                     },
                 },
-                "required": sorted_items_equal(['overdraft_subunits', 'currency']),
+                "required": sorted_items_equal(["overdraft_subunits", "currency"]),
                 "title": "Overdraft",
                 "type": "object",
             },
@@ -630,7 +633,7 @@ def test_can_refute_specialized_overdraft_model() -> None:
         SpecializedOverdraftModel.model_validate(data)
 
 
-def test_can_generate_custom_overdraft_schema() -> None:
+def test_can_generate_specialized_overdraft_schema() -> None:
     assert SpecializedOverdraftModel.model_json_schema() == {
         "properties": {
             "overdraft": {
@@ -645,7 +648,7 @@ def test_can_generate_custom_overdraft_schema() -> None:
                         "exclusiveMinimum": 0,
                     },
                 },
-                "required": sorted_items_equal(['overdraft_subunits', 'currency']),
+                "required": sorted_items_equal(["overdraft_subunits", "currency"]),
                 "title": "Overdraft",
                 "type": "object",
             },
