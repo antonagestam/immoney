@@ -21,7 +21,6 @@ from typing import Generic
 from typing import TypeVar
 from typing import cast
 from typing import final
-from typing import get_args
 from typing import overload
 
 from abcattrs import Abstract
@@ -363,6 +362,7 @@ class Money(Frozen, Generic[C], metaclass=InstanceCache):
         from ._pydantic import create_concrete_money_validator
         from ._pydantic import create_registry_money_dict
         from ._pydantic import create_registry_money_validator
+        from ._pydantic import extract_currency_type_arg
         from ._pydantic import serialize_money
         from .currencies import registry as default_registry
 
@@ -372,13 +372,7 @@ class Money(Frozen, Generic[C], metaclass=InstanceCache):
             money_dict = create_registry_money_dict(default_registry)
 
         else:
-            match get_args(source_type):
-                case (currency_type,):
-                    assert issubclass(currency_type, Currency)
-                    currency_type = currency_type
-                case invalid:
-                    raise TypeError(f"Invalid specialization for Money: {invalid!r}.")
-
+            currency_type = extract_currency_type_arg(source_type)
             cls_registry = currency_type.get_default_registry()
 
             # Handle specialized to intermediate base class.
@@ -469,15 +463,58 @@ class SubunitFraction(Frozen, Generic[C], metaclass=InstanceCache):
         )
         return Money(quantized, self.currency)
 
+    # todo: Unify with identical logic for Money.
     @classmethod
     def __get_pydantic_core_schema__(
         cls,
+        source_type: type,
         *args: object,
         **kwargs: object,
     ) -> CoreSchema:
-        from ._pydantic import subunit_fraction_schema
+        from pydantic_core import core_schema
 
-        return subunit_fraction_schema
+        from ._pydantic import create_concrete_fraction_dict
+        from ._pydantic import create_concrete_fraction_validator
+        from ._pydantic import create_registry_fraction_dict
+        from ._pydantic import create_registry_fraction_validator
+        from ._pydantic import extract_currency_type_arg
+        from ._pydantic import serialize_subunit_fraction
+        from .currencies import registry as default_registry
+
+        if source_type is cls:
+            # Not specialized allow any default Currency.
+            validate_subunit_fraction = create_registry_fraction_validator(
+                default_registry
+            )
+            subunit_fraction_dict = create_registry_fraction_dict(default_registry)
+
+        else:
+            currency_type = extract_currency_type_arg(source_type)
+            cls_registry = currency_type.get_default_registry()
+
+            # Handle specialized to intermediate base class.
+            if abc.ABC in currency_type.__bases__:
+                validate_subunit_fraction = create_registry_fraction_validator(
+                    cls_registry
+                )
+                subunit_fraction_dict = create_registry_fraction_dict(cls_registry)
+
+            # Handle specialized to a concrete currency class.
+            else:
+                currency = cls_registry[currency_type.code]
+                validate_subunit_fraction = create_concrete_fraction_validator(currency)
+                subunit_fraction_dict = create_concrete_fraction_dict(currency)
+
+        return core_schema.general_after_validator_function(
+            schema=subunit_fraction_dict,
+            function=validate_subunit_fraction,
+            serialization=core_schema.wrap_serializer_function_ser_schema(
+                function=serialize_subunit_fraction,
+                schema=subunit_fraction_dict,
+                # fixme
+                # json_return_type="dict",
+            ),
+        )
 
 
 @final

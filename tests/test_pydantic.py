@@ -10,7 +10,11 @@ from immoney import Currency
 from immoney import Money
 from immoney import Overdraft
 from immoney import SubunitFraction
-from immoney import currencies
+from immoney.currencies import CUP
+from immoney.currencies import INR
+from immoney.currencies import NOK
+from immoney.currencies import USD
+from immoney.currencies import INRType
 from immoney.currencies import USDType
 
 from .custom_currency import JCN
@@ -29,7 +33,7 @@ def test_can_roundtrip_default_currency_model() -> None:
 
     assert_type(instance.currency, Currency)
     assert isinstance(instance, DefaultCurrencyModel)
-    assert instance.currency is currencies.NOK
+    assert instance.currency is NOK
     assert json.loads(instance.model_dump_json()) == data
 
 
@@ -105,7 +109,7 @@ def test_can_roundtrip_money_model() -> None:
         foo: Money  # type: ignore[type-arg]
 
     instance = Model.model_validate(data)
-    assert instance.foo == currencies.USD("49.90")
+    assert instance.foo == USD("49.90")
     assert json.loads(instance.model_dump_json()) == data
 
 
@@ -122,7 +126,7 @@ def test_can_roundtrip_specialized_money_model() -> None:
     }
 
     instance = SpecializedMoneyModel.model_validate(data)
-    assert instance.dollars == currencies.USD("49.90")
+    assert instance.dollars == USD("49.90")
     assert json.loads(instance.model_dump_json()) == data
     assert_type(instance.dollars, Money[USDType])
     assert_type(instance.dollars.currency, USDType)
@@ -197,9 +201,7 @@ def test_can_roundtrip_subunit_fraction_model(numerator: int, denominator: int) 
         }
     }
     instance = FractionModel.model_validate(data)
-    assert instance.value_field == currencies.INR.fraction(
-        Fraction(numerator, denominator)
-    )
+    assert instance.value_field == INR.fraction(Fraction(numerator, denominator))
     assert json.loads(instance.model_dump_json()) == {
         "value_field": {
             "numerator": expected.numerator,
@@ -207,6 +209,83 @@ def test_can_roundtrip_subunit_fraction_model(numerator: int, denominator: int) 
             "currency": "INR",
         }
     }
+
+
+class CustomFractionModel(BaseModel):
+    value_field: SubunitFraction[CustomCurrency]
+
+
+def test_can_roundtrip_custom_subunit_fraction_model() -> None:
+    expected = Fraction(5, 3)
+    data = {
+        "value_field": {
+            "numerator": 5,
+            "denominator": 3,
+            "currency": "JCN",
+        }
+    }
+    instance = CustomFractionModel.model_validate(data)
+    assert instance.value_field == JCN.fraction(Fraction(5, 3))
+    assert json.loads(instance.model_dump_json()) == {
+        "value_field": {
+            "numerator": expected.numerator,
+            "denominator": expected.denominator,
+            "currency": "JCN",
+        }
+    }
+
+
+def test_can_refute_custom_subunit_fraction_model() -> None:
+    data = {
+        "value_field": {
+            "numerator": 5,
+            "denominator": 3,
+            "currency": "SEK",
+        }
+    }
+
+    with pytest.raises(
+        ValidationError,
+        match=r"Input should be '(MCN|JCN)' or '(MCN|JCN)'",
+    ):
+        CustomFractionModel.model_validate(data)
+
+
+class SpecializedFractionModel(BaseModel):
+    value_field: SubunitFraction[INRType]
+
+
+def test_can_roundtrip_specialized_subunit_fraction_model() -> None:
+    expected = Fraction(13, 7)
+    data = {
+        "value_field": {
+            "numerator": 13,
+            "denominator": 7,
+            "currency": "INR",
+        }
+    }
+    instance = SpecializedFractionModel.model_validate(data)
+    assert instance.value_field == INR.fraction(expected)
+    assert json.loads(instance.model_dump_json()) == {
+        "value_field": {
+            "numerator": expected.numerator,
+            "denominator": expected.denominator,
+            "currency": "INR",
+        }
+    }
+
+
+def test_can_refute_specialized_subunit_fraction_model() -> None:
+    data = {
+        "value_field": {
+            "numerator": 13,
+            "denominator": 7,
+            "currency": "USD",
+        }
+    }
+
+    with pytest.raises(ValidationError, match=r"Input should be 'INR'"):
+        SpecializedFractionModel.model_validate(data)
 
 
 def test_can_roundtrip_overdraft_model() -> None:
@@ -221,5 +300,5 @@ def test_can_roundtrip_overdraft_model() -> None:
         bar: Overdraft  # type: ignore[type-arg]
 
     instance = Model.model_validate(data)
-    assert instance.bar == currencies.CUP.overdraft("899.99")
+    assert instance.bar == CUP.overdraft("899.99")
     assert json.loads(instance.model_dump_json()) == data

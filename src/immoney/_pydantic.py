@@ -4,6 +4,7 @@ from fractions import Fraction
 from typing import Any
 from typing import Final
 from typing import TypedDict
+from typing import get_args
 
 from pydantic_core import core_schema
 from pydantic_core.core_schema import TypedDictSchema
@@ -16,6 +17,15 @@ from . import SubunitFraction
 # fixme: Should not depend on registry here, should always be parameterized.
 from .currencies import registry
 from .registry import CurrencyRegistry
+
+
+def extract_currency_type_arg(source_type: type) -> type[Currency]:
+    match get_args(source_type):
+        case (type() as currency_type,):
+            assert issubclass(currency_type, Currency)
+            return currency_type
+        case invalid:
+            raise TypeError(f"Invalid type args: {invalid!r}.")
 
 
 class MoneyDict(TypedDict):
@@ -105,15 +115,45 @@ def create_concrete_money_dict(currency: Currency) -> TypedDictSchema:
     )
 
 
-def validate_subunit_fraction(
-    value: SubunitFractionDict | SubunitFraction[Any],
-    *args: object,
-) -> SubunitFraction[Any]:
-    if isinstance(value, SubunitFraction):
-        return value
-    currency = registry[value["currency"]]
-    fraction = Fraction(value["numerator"], value["denominator"])
-    return currency.fraction(fraction)
+def create_registry_fraction_validator(
+    default_registry: CurrencyRegistry,
+) -> core_schema.GeneralValidatorFunction:
+    def validate_subunit_fraction(
+        value: SubunitFractionDict | SubunitFraction[Currency],
+        *args: object,
+        _registry: CurrencyRegistry = default_registry,
+    ) -> SubunitFraction[Currency]:
+        if isinstance(value, SubunitFraction):
+            if value.currency.code not in _registry:
+                raise ValueError("Currency is not registered.")
+            return value
+        currency = _registry[value["currency"]]
+        fraction = Fraction(value["numerator"], value["denominator"])
+        return currency.fraction(fraction)
+
+    return validate_subunit_fraction
+
+
+def create_concrete_fraction_validator(
+    default_currency: Currency,
+) -> core_schema.GeneralValidatorFunction:
+    def validate_subunit_fraction(
+        value: SubunitFractionDict | SubunitFraction[Currency],
+        *args: object,
+        currency: Currency = default_currency,
+    ) -> SubunitFraction[Currency]:
+        if isinstance(value, SubunitFraction):
+            if value.currency is not currency:
+                raise ValueError(
+                    f"Invalid currency, got {value.currency!r}, expected {currency!r}."
+                )
+            return value
+        if value["currency"] != currency.code:
+            raise ValueError(f"Invalid currency, expected {currency!s}.")
+        fraction = Fraction(value["numerator"], value["denominator"])
+        return currency.fraction(fraction)
+
+    return validate_subunit_fraction
 
 
 def serialize_subunit_fraction(
@@ -127,23 +167,26 @@ def serialize_subunit_fraction(
     }
 
 
-subunit_fraction_dict: Final = core_schema.typed_dict_schema(
-    {
-        "numerator": core_schema.typed_dict_field(core_schema.int_schema()),
-        "denominator": core_schema.typed_dict_field(core_schema.int_schema()),
-        "currency": core_schema.typed_dict_field(currency_value_schema(registry)),
-    }
-)
-subunit_fraction_schema: Final = core_schema.general_after_validator_function(
-    schema=subunit_fraction_dict,
-    function=validate_subunit_fraction,
-    serialization=core_schema.wrap_serializer_function_ser_schema(
-        function=serialize_subunit_fraction,
-        schema=subunit_fraction_dict,
-        # fixme
-        # json_return_type="dict",
-    ),
-)
+def create_registry_fraction_dict(registry: CurrencyRegistry) -> TypedDictSchema:
+    return core_schema.typed_dict_schema(
+        {
+            "numerator": core_schema.typed_dict_field(core_schema.int_schema()),
+            "denominator": core_schema.typed_dict_field(core_schema.int_schema()),
+            "currency": core_schema.typed_dict_field(currency_value_schema(registry)),
+        }
+    )
+
+
+def create_concrete_fraction_dict(currency: Currency) -> TypedDictSchema:
+    return core_schema.typed_dict_schema(
+        {
+            "numerator": core_schema.typed_dict_field(core_schema.int_schema()),
+            "denominator": core_schema.typed_dict_field(core_schema.int_schema()),
+            "currency": core_schema.typed_dict_field(
+                core_schema.literal_schema(expected=[currency.code]),
+            ),
+        }
+    )
 
 
 def validate_overdraft(
@@ -166,7 +209,9 @@ def serialize_overdraft(value: Overdraft[Any], *args: object) -> OverdraftDict:
 
 overdraft_dict: Final = core_schema.typed_dict_schema(
     {
-        "overdraft_subunits": core_schema.typed_dict_field(core_schema.int_schema(gt=0)),
+        "overdraft_subunits": core_schema.typed_dict_field(
+            core_schema.int_schema(gt=0)
+        ),
         "currency": core_schema.typed_dict_field(currency_value_schema(registry)),
     }
 )
