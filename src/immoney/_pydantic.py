@@ -150,7 +150,8 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
             if isinstance(value, Money):
                 if value.currency is not _currency:
                     raise ValueError(
-                        f"Invalid currency, got {value.currency!r}, expected {_currency!r}."
+                        f"Invalid currency, got {value.currency!r}, expected "
+                        f"{_currency!r}."
                     )
                 return value
             if value["currency"] != _currency.code:
@@ -239,7 +240,8 @@ class SubunitFractionAdapter(
             if isinstance(value, SubunitFraction):
                 if value.currency is not _currency:
                     raise ValueError(
-                        f"Invalid currency, got {value.currency!r}, expected {_currency!r}."
+                        f"Invalid currency, got {value.currency!r}, expected "
+                        f"{_currency!r}."
                     )
                 return value
             if value["currency"] != _currency.code:
