@@ -392,9 +392,6 @@ class Money(Frozen, Generic[C], metaclass=InstanceCache):
             serialization=core_schema.wrap_serializer_function_ser_schema(
                 function=serialize_money,
                 schema=money_dict,
-                # fixme
-                # return_schema=...,
-                # json_return_type="dict",
             ),
         )
 
@@ -511,8 +508,6 @@ class SubunitFraction(Frozen, Generic[C], metaclass=InstanceCache):
             serialization=core_schema.wrap_serializer_function_ser_schema(
                 function=serialize_subunit_fraction,
                 schema=subunit_fraction_dict,
-                # fixme
-                # json_return_type="dict",
             ),
         )
 
@@ -598,12 +593,49 @@ class Overdraft(Frozen, Generic[C], metaclass=InstanceCache):
     def __pos__(self: Overdraft[C]) -> Overdraft[C]:
         return self
 
+    # todo: Unify with identical logic for Money.
     @classmethod
     def __get_pydantic_core_schema__(
         cls,
+        source_type: type,
         *args: object,
         **kwargs: object,
     ) -> CoreSchema:
-        from ._pydantic import overdraft_schema
+        from pydantic_core import core_schema
 
-        return overdraft_schema
+        from ._pydantic import create_concrete_overdraft_dict
+        from ._pydantic import create_concrete_overdraft_validator
+        from ._pydantic import create_registry_overdraft_dict
+        from ._pydantic import create_registry_overdraft_validator
+        from ._pydantic import extract_currency_type_arg
+        from ._pydantic import serialize_overdraft
+        from .currencies import registry as default_registry
+
+        if source_type is cls:
+            # Not specialized allow any default Currency.
+            validate_overdraft = create_registry_overdraft_validator(default_registry)
+            overdraft_dict = create_registry_overdraft_dict(default_registry)
+
+        else:
+            currency_type = extract_currency_type_arg(source_type)
+            cls_registry = currency_type.get_default_registry()
+
+            # Handle specialized to intermediate base class.
+            if abc.ABC in currency_type.__bases__:
+                validate_overdraft = create_registry_overdraft_validator(cls_registry)
+                overdraft_dict = create_registry_overdraft_dict(cls_registry)
+
+            # Handle specialized to a concrete currency class.
+            else:
+                currency = cls_registry[currency_type.code]
+                validate_overdraft = create_concrete_overdraft_validator(currency)
+                overdraft_dict = create_concrete_overdraft_dict(currency)
+
+        return core_schema.general_after_validator_function(
+            schema=overdraft_dict,
+            function=validate_overdraft,
+            serialization=core_schema.wrap_serializer_function_ser_schema(
+                function=serialize_overdraft,
+                schema=overdraft_dict,
+            ),
+        )

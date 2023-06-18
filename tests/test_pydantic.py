@@ -14,6 +14,7 @@ from immoney.currencies import CUP
 from immoney.currencies import INR
 from immoney.currencies import NOK
 from immoney.currencies import USD
+from immoney.currencies import CUPType
 from immoney.currencies import INRType
 from immoney.currencies import USDType
 
@@ -224,7 +225,9 @@ def test_can_roundtrip_custom_subunit_fraction_model() -> None:
             "currency": "JCN",
         }
     }
+
     instance = CustomFractionModel.model_validate(data)
+
     assert instance.value_field == JCN.fraction(Fraction(5, 3))
     assert json.loads(instance.model_dump_json()) == {
         "value_field": {
@@ -233,6 +236,8 @@ def test_can_roundtrip_custom_subunit_fraction_model() -> None:
             "currency": "JCN",
         }
     }
+    assert_type(instance.value_field, SubunitFraction[CustomCurrency])
+    assert_type(instance.value_field.currency, CustomCurrency)
 
 
 def test_can_refute_custom_subunit_fraction_model() -> None:
@@ -264,7 +269,9 @@ def test_can_roundtrip_specialized_subunit_fraction_model() -> None:
             "currency": "INR",
         }
     }
+
     instance = SpecializedFractionModel.model_validate(data)
+
     assert instance.value_field == INR.fraction(expected)
     assert json.loads(instance.model_dump_json()) == {
         "value_field": {
@@ -273,6 +280,8 @@ def test_can_roundtrip_specialized_subunit_fraction_model() -> None:
             "currency": "INR",
         }
     }
+    assert_type(instance.value_field, SubunitFraction[INRType])
+    assert_type(instance.value_field.currency, INRType)
 
 
 def test_can_refute_specialized_subunit_fraction_model() -> None:
@@ -290,15 +299,80 @@ def test_can_refute_specialized_subunit_fraction_model() -> None:
 
 def test_can_roundtrip_overdraft_model() -> None:
     data = {
-        "bar": {
+        "overdraft": {
             "overdraft_subunits": 89999,
             "currency": "CUP",
         }
     }
 
     class Model(BaseModel):
-        bar: Overdraft  # type: ignore[type-arg]
+        overdraft: Overdraft  # type: ignore[type-arg]
 
     instance = Model.model_validate(data)
-    assert instance.bar == CUP.overdraft("899.99")
+    assert instance.overdraft == CUP.overdraft("899.99")
     assert json.loads(instance.model_dump_json()) == data
+
+
+class CustomOverdraftModel(BaseModel):
+    overdraft: Overdraft[CustomCurrency]
+
+
+def test_can_roundtrip_custom_overdraft_model() -> None:
+    data = {
+        "overdraft": {
+            "overdraft_subunits": 89999,
+            "currency": "MCN",
+        }
+    }
+
+    instance = CustomOverdraftModel.model_validate(data)
+    assert instance.overdraft == MCN.overdraft("89.999")
+    assert json.loads(instance.model_dump_json()) == data
+    assert_type(instance.overdraft, Overdraft[CustomCurrency])
+    assert_type(instance.overdraft.money.currency, CustomCurrency)
+
+
+def test_can_refute_custom_overdraft_model() -> None:
+    data = {
+        "overdraft": {
+            "overdraft_subunits": 89999,
+            "currency": "SEK",
+        }
+    }
+
+    with pytest.raises(
+        ValidationError,
+        match=r"Input should be '(MCN|JCN)' or '(MCN|JCN)'",
+    ):
+        CustomOverdraftModel.model_validate(data)
+
+
+class SpecializedOverdraftModel(BaseModel):
+    overdraft: Overdraft[CUPType]
+
+
+def test_can_roundtrip_specialized_overdraft_model() -> None:
+    data = {
+        "overdraft": {
+            "overdraft_subunits": 89999,
+            "currency": "CUP",
+        }
+    }
+
+    instance = SpecializedOverdraftModel.model_validate(data)
+    assert instance.overdraft == CUP.overdraft("899.99")
+    assert json.loads(instance.model_dump_json()) == data
+    assert_type(instance.overdraft, Overdraft[CUPType])
+    assert_type(instance.overdraft.money.currency, CUPType)
+
+
+def test_can_refute_specialized_overdraft_model() -> None:
+    data = {
+        "overdraft": {
+            "overdraft_subunits": 89999,
+            "currency": "EUR",
+        }
+    }
+
+    with pytest.raises(ValidationError, match=r"Input should be 'CUP'"):
+        SpecializedOverdraftModel.model_validate(data)
