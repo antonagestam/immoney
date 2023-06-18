@@ -125,37 +125,12 @@ class Currency(Frozen, abc.ABC):
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls: type[CurrencySelf],
+        cls,
         *args: object,
         **kwargs: object,
     ) -> CoreSchema:
-        if abc.ABC not in cls.__bases__:
-            raise TypeError(
-                "Using concrete Currency types as Pydantic fields is not yet supported."
-            )
-
-        from pydantic_core import core_schema
-
-        from ._pydantic import currency_value_schema
-
-        cls_registry = cls.get_default_registry()
-
-        def validate_currency(
-            value: str | CurrencySelf,
-            *args: object,
-            registry: CurrencyRegistry = cls_registry,
-        ) -> Currency:
-            if isinstance(value, Currency):
-                return value
-            if isinstance(value, str):
-                return registry[value]
-            raise TypeError("Invalid type for Currency field.")
-
-        return core_schema.general_after_validator_function(
-            function=validate_currency,
-            schema=currency_value_schema(cls_registry),
-            serialization=core_schema.to_string_ser_schema(),
-        )
+        from ._pydantic import build_currency_schema
+        return build_currency_schema(cls)
 
 
 C = TypeVar("C", bound=Currency)
@@ -356,43 +331,9 @@ class Money(Frozen, Generic[C], metaclass=InstanceCache):
         *args: object,
         **kwargs: object,
     ) -> CoreSchema:
-        from pydantic_core import core_schema
-
-        from ._pydantic import create_concrete_money_dict
-        from ._pydantic import create_concrete_money_validator
-        from ._pydantic import create_registry_money_dict
-        from ._pydantic import create_registry_money_validator
-        from ._pydantic import extract_currency_type_arg
-        from ._pydantic import serialize_money
-        from .currencies import registry as default_registry
-
-        if source_type is cls:
-            # Not specialized, allow any default Currency.
-            validate_money = create_registry_money_validator(default_registry)
-            money_dict = create_registry_money_dict(default_registry)
-
-        else:
-            currency_type = extract_currency_type_arg(source_type)
-            cls_registry = currency_type.get_default_registry()
-
-            # Handle specialized to intermediate base class.
-            if abc.ABC in currency_type.__bases__:
-                validate_money = create_registry_money_validator(cls_registry)
-                money_dict = create_registry_money_dict(cls_registry)
-
-            # Handle specialized to a concrete currency class.
-            else:
-                currency = cls_registry[currency_type.code]
-                validate_money = create_concrete_money_validator(currency)
-                money_dict = create_concrete_money_dict(currency)
-
-        return core_schema.general_after_validator_function(
-            schema=money_dict,
-            function=validate_money,
-            serialization=core_schema.wrap_serializer_function_ser_schema(
-                function=serialize_money,
-                schema=money_dict,
-            ),
+        from ._pydantic import build_generic_currency_schema, MoneyAdapter
+        return build_generic_currency_schema(
+            cls=cls, source_type=source_type, adapter=MoneyAdapter,
         )
 
 
@@ -460,7 +401,6 @@ class SubunitFraction(Frozen, Generic[C], metaclass=InstanceCache):
         )
         return Money(quantized, self.currency)
 
-    # todo: Unify with identical logic for Money.
     @classmethod
     def __get_pydantic_core_schema__(
         cls,
@@ -468,47 +408,9 @@ class SubunitFraction(Frozen, Generic[C], metaclass=InstanceCache):
         *args: object,
         **kwargs: object,
     ) -> CoreSchema:
-        from pydantic_core import core_schema
-
-        from ._pydantic import create_concrete_fraction_dict
-        from ._pydantic import create_concrete_fraction_validator
-        from ._pydantic import create_registry_fraction_dict
-        from ._pydantic import create_registry_fraction_validator
-        from ._pydantic import extract_currency_type_arg
-        from ._pydantic import serialize_subunit_fraction
-        from .currencies import registry as default_registry
-
-        if source_type is cls:
-            # Not specialized allow any default Currency.
-            validate_subunit_fraction = create_registry_fraction_validator(
-                default_registry
-            )
-            subunit_fraction_dict = create_registry_fraction_dict(default_registry)
-
-        else:
-            currency_type = extract_currency_type_arg(source_type)
-            cls_registry = currency_type.get_default_registry()
-
-            # Handle specialized to intermediate base class.
-            if abc.ABC in currency_type.__bases__:
-                validate_subunit_fraction = create_registry_fraction_validator(
-                    cls_registry
-                )
-                subunit_fraction_dict = create_registry_fraction_dict(cls_registry)
-
-            # Handle specialized to a concrete currency class.
-            else:
-                currency = cls_registry[currency_type.code]
-                validate_subunit_fraction = create_concrete_fraction_validator(currency)
-                subunit_fraction_dict = create_concrete_fraction_dict(currency)
-
-        return core_schema.general_after_validator_function(
-            schema=subunit_fraction_dict,
-            function=validate_subunit_fraction,
-            serialization=core_schema.wrap_serializer_function_ser_schema(
-                function=serialize_subunit_fraction,
-                schema=subunit_fraction_dict,
-            ),
+        from ._pydantic import build_generic_currency_schema, SubunitFractionAdapter
+        return build_generic_currency_schema(
+            cls=cls, source_type=source_type, adapter=SubunitFractionAdapter,
         )
 
 
@@ -593,7 +495,6 @@ class Overdraft(Frozen, Generic[C], metaclass=InstanceCache):
     def __pos__(self: Overdraft[C]) -> Overdraft[C]:
         return self
 
-    # todo: Unify with identical logic for Money.
     @classmethod
     def __get_pydantic_core_schema__(
         cls,
@@ -601,41 +502,7 @@ class Overdraft(Frozen, Generic[C], metaclass=InstanceCache):
         *args: object,
         **kwargs: object,
     ) -> CoreSchema:
-        from pydantic_core import core_schema
-
-        from ._pydantic import create_concrete_overdraft_dict
-        from ._pydantic import create_concrete_overdraft_validator
-        from ._pydantic import create_registry_overdraft_dict
-        from ._pydantic import create_registry_overdraft_validator
-        from ._pydantic import extract_currency_type_arg
-        from ._pydantic import serialize_overdraft
-        from .currencies import registry as default_registry
-
-        if source_type is cls:
-            # Not specialized allow any default Currency.
-            validate_overdraft = create_registry_overdraft_validator(default_registry)
-            overdraft_dict = create_registry_overdraft_dict(default_registry)
-
-        else:
-            currency_type = extract_currency_type_arg(source_type)
-            cls_registry = currency_type.get_default_registry()
-
-            # Handle specialized to intermediate base class.
-            if abc.ABC in currency_type.__bases__:
-                validate_overdraft = create_registry_overdraft_validator(cls_registry)
-                overdraft_dict = create_registry_overdraft_dict(cls_registry)
-
-            # Handle specialized to a concrete currency class.
-            else:
-                currency = cls_registry[currency_type.code]
-                validate_overdraft = create_concrete_overdraft_validator(currency)
-                overdraft_dict = create_concrete_overdraft_dict(currency)
-
-        return core_schema.general_after_validator_function(
-            schema=overdraft_dict,
-            function=validate_overdraft,
-            serialization=core_schema.wrap_serializer_function_ser_schema(
-                function=serialize_overdraft,
-                schema=overdraft_dict,
-            ),
+        from ._pydantic import build_generic_currency_schema, OverdraftAdapter
+        return build_generic_currency_schema(
+            cls=cls, source_type=source_type, adapter=OverdraftAdapter,
         )
