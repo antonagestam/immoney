@@ -21,6 +21,7 @@ from typing import Generic
 from typing import TypeVar
 from typing import cast
 from typing import final
+from typing import get_args
 from typing import overload
 
 from abcattrs import Abstract
@@ -37,6 +38,8 @@ from .types import PositiveDecimal
 if TYPE_CHECKING:
     from pydantic_core.core_schema import CoreSchema
 
+    from .registry import CurrencyRegistry
+
 CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 valid_subunit: Final = frozenset({1, 10, 100, 1_000, 10_000, 100_000, 1_000_000})
 
@@ -48,6 +51,9 @@ class Currency(Frozen, abc.ABC):
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
+        # Skip validation on intermediary base classes.
+        if abc.ABC in cls.__bases__:
+            return
         if cls.subunit not in valid_subunit:
             raise InvalidSubunit(
                 "Currency subunits other than powers of 10 are not supported"
@@ -113,10 +119,44 @@ class Currency(Frozen, abc.ABC):
         return Overdraft(Money(value, self))
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **kwargs: object) -> CoreSchema:
-        from ._pydantic import currency_schema
+    def get_default_registry(cls) -> CurrencyRegistry:
+        from .currencies import registry
 
-        return currency_schema
+        return registry
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls: type[CurrencySelf],
+        *args: object,
+        **kwargs: object,
+    ) -> CoreSchema:
+        if abc.ABC not in cls.__bases__:
+            raise TypeError(
+                "Using concrete Currency types as Pydantic fields is not yet supported."
+            )
+
+        from pydantic_core import core_schema
+
+        from ._pydantic import currency_value_schema
+
+        cls_registry = cls.get_default_registry()
+
+        def validate_currency(
+            value: str | CurrencySelf,
+            *args: object,
+            registry: CurrencyRegistry = cls_registry,
+        ) -> Currency:
+            if isinstance(value, Currency):
+                return value
+            if isinstance(value, str):
+                return registry[value]
+            raise TypeError("Invalid type for Currency field.")
+
+        return core_schema.general_after_validator_function(
+            function=validate_currency,
+            schema=currency_value_schema(cls_registry),
+            serialization=core_schema.to_string_ser_schema(),
+        )
 
 
 C = TypeVar("C", bound=Currency)
@@ -311,10 +351,58 @@ class Money(Frozen, Generic[C], metaclass=InstanceCache):
         )
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **kwargs: object) -> CoreSchema:
-        from ._pydantic import money_schema
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: type,
+        *args: object,
+        **kwargs: object,
+    ) -> CoreSchema:
+        from pydantic_core import core_schema
 
-        return money_schema
+        from ._pydantic import create_concrete_money_dict
+        from ._pydantic import create_concrete_money_validator
+        from ._pydantic import create_registry_money_dict
+        from ._pydantic import create_registry_money_validator
+        from ._pydantic import serialize_money
+        from .currencies import registry as default_registry
+
+        if source_type is cls:
+            # Not specialized, allow any default Currency.
+            validate_money = create_registry_money_validator(default_registry)
+            money_dict = create_registry_money_dict(default_registry)
+
+        else:
+            match get_args(source_type):
+                case (currency_type,):
+                    assert issubclass(currency_type, Currency)
+                    currency_type = currency_type
+                case invalid:
+                    raise TypeError(f"Invalid specialization for Money: {invalid!r}.")
+
+            cls_registry = currency_type.get_default_registry()
+
+            # Handle specialized to intermediate base class.
+            if abc.ABC in currency_type.__bases__:
+                validate_money = create_registry_money_validator(cls_registry)
+                money_dict = create_registry_money_dict(cls_registry)
+
+            # Handle specialized to a concrete currency class.
+            else:
+                currency = cls_registry[currency_type.code]
+                validate_money = create_concrete_money_validator(currency)
+                money_dict = create_concrete_money_dict(currency)
+
+        return core_schema.general_after_validator_function(
+            schema=money_dict,
+            function=validate_money,
+            serialization=core_schema.wrap_serializer_function_ser_schema(
+                function=serialize_money,
+                schema=money_dict,
+                # fixme
+                # return_schema=...,
+                # json_return_type="dict",
+            ),
+        )
 
 
 class Round(enum.Enum):
@@ -382,7 +470,11 @@ class SubunitFraction(Frozen, Generic[C], metaclass=InstanceCache):
         return Money(quantized, self.currency)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **kwargs: object) -> CoreSchema:
+    def __get_pydantic_core_schema__(
+        cls,
+        *args: object,
+        **kwargs: object,
+    ) -> CoreSchema:
         from ._pydantic import subunit_fraction_schema
 
         return subunit_fraction_schema
@@ -470,7 +562,11 @@ class Overdraft(Frozen, Generic[C], metaclass=InstanceCache):
         return self
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **kwargs: object) -> CoreSchema:
+    def __get_pydantic_core_schema__(
+        cls,
+        *args: object,
+        **kwargs: object,
+    ) -> CoreSchema:
         from ._pydantic import overdraft_schema
 
         return overdraft_schema

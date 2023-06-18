@@ -6,11 +6,14 @@ from typing import Final
 from typing import TypedDict
 
 from pydantic_core import core_schema
+from pydantic_core.core_schema import TypedDictSchema
 
 from . import Currency
 from . import Money
 from . import Overdraft
 from . import SubunitFraction
+
+# fixme: Should not depend on registry here, should always be parameterized.
 from .currencies import registry
 from .registry import CurrencyRegistry
 
@@ -32,25 +35,47 @@ class OverdraftDict(TypedDict):
 
 
 def currency_value_schema(registry: CurrencyRegistry) -> core_schema.LiteralSchema:
-    return core_schema.literal_schema(*registry.keys())
+    # todo: Is list conversion really required here?
+    return core_schema.literal_schema(expected=list(registry.keys()))
 
 
-def validate_currency(value: str | Currency, *args: object) -> Currency:
-    return value if isinstance(value, Currency) else registry[value]
+def create_registry_money_validator(
+    default_registry: CurrencyRegistry,
+) -> core_schema.GeneralValidatorFunction:
+    def validate_money(
+        value: MoneyDict | Money[Currency],
+        *args: object,
+        _registry: CurrencyRegistry = default_registry,
+    ) -> Money[Currency]:
+        if isinstance(value, Money):
+            if value.currency.code not in _registry:
+                raise ValueError("Currency not register.")
+            return value
+        currency = _registry[value["currency"]]
+        return currency.from_subunit(value["subunits"])
+
+    return validate_money
 
 
-currency_schema: Final = core_schema.function_after_schema(
-    function=validate_currency,
-    schema=currency_value_schema(registry),
-    serialization=core_schema.to_string_ser_schema(),
-)
+def create_concrete_money_validator(
+    default_currency: Currency,
+) -> core_schema.GeneralValidatorFunction:
+    def validate_money(
+        value: MoneyDict | Money[Currency],
+        *args: object,
+        currency: Currency = default_currency,
+    ) -> Money[Currency]:
+        if isinstance(value, Money):
+            if value.currency is not currency:
+                raise ValueError(
+                    f"Invalid currency, got {value.currency!r}, expected {currency!r}."
+                )
+            return value
+        if value["currency"] != currency.code:
+            raise ValueError(f"Invalid currency, expected {currency!s}.")
+        return currency.from_subunit(value["subunits"])
 
-
-def validate_money(value: MoneyDict | Money[Any], *args: object) -> Money[Any]:
-    if isinstance(value, Money):
-        return value
-    currency = registry[value["currency"]]
-    return currency.from_subunit(value["subunits"])
+    return validate_money
 
 
 def serialize_money(value: Money[Any], *args: object) -> MoneyDict:
@@ -60,21 +85,24 @@ def serialize_money(value: Money[Any], *args: object) -> MoneyDict:
     }
 
 
-money_dict: Final = core_schema.typed_dict_schema(
-    {
-        "subunits": core_schema.typed_dict_field(core_schema.int_schema(gt=0)),
-        "currency": core_schema.typed_dict_field(currency_value_schema(registry)),
-    }
-)
-money_schema: Final = core_schema.function_after_schema(
-    schema=money_dict,
-    function=validate_money,
-    serialization=core_schema.function_wrap_ser_schema(
-        function=serialize_money,
-        schema=money_dict,
-        json_return_type="dict",
-    ),
-)
+def create_registry_money_dict(registry: CurrencyRegistry) -> TypedDictSchema:
+    return core_schema.typed_dict_schema(
+        {
+            "subunits": core_schema.typed_dict_field(core_schema.int_schema(gt=0)),
+            "currency": core_schema.typed_dict_field(currency_value_schema(registry)),
+        }
+    )
+
+
+def create_concrete_money_dict(currency: Currency) -> TypedDictSchema:
+    return core_schema.typed_dict_schema(
+        {
+            "subunits": core_schema.typed_dict_field(core_schema.int_schema(gt=0)),
+            "currency": core_schema.typed_dict_field(
+                core_schema.literal_schema(expected=[currency.code]),
+            ),
+        }
+    )
 
 
 def validate_subunit_fraction(
@@ -106,13 +134,14 @@ subunit_fraction_dict: Final = core_schema.typed_dict_schema(
         "currency": core_schema.typed_dict_field(currency_value_schema(registry)),
     }
 )
-subunit_fraction_schema: Final = core_schema.function_after_schema(
+subunit_fraction_schema: Final = core_schema.general_after_validator_function(
     schema=subunit_fraction_dict,
     function=validate_subunit_fraction,
-    serialization=core_schema.function_wrap_ser_schema(
+    serialization=core_schema.wrap_serializer_function_ser_schema(
         function=serialize_subunit_fraction,
         schema=subunit_fraction_dict,
-        json_return_type="dict",
+        # fixme
+        # json_return_type="dict",
     ),
 )
 
@@ -141,12 +170,13 @@ overdraft_dict: Final = core_schema.typed_dict_schema(
         "currency": core_schema.typed_dict_field(currency_value_schema(registry)),
     }
 )
-overdraft_schema: Final = core_schema.function_after_schema(
+overdraft_schema: Final = core_schema.general_after_validator_function(
     schema=overdraft_dict,
     function=validate_overdraft,
-    serialization=core_schema.function_wrap_ser_schema(
+    serialization=core_schema.wrap_serializer_function_ser_schema(
         function=serialize_overdraft,
         schema=overdraft_dict,
-        json_return_type="dict",
+        # fixme
+        # json_return_type="dict",
     ),
 )
