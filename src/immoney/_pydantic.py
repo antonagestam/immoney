@@ -30,7 +30,7 @@ class SubunitFractionDict(TypedDict):
 
 
 class OverdraftDict(TypedDict):
-    deficit_subunits: int
+    overdraft_subunits: int
     currency: str
 
 
@@ -153,20 +153,20 @@ def validate_overdraft(
     if isinstance(value, Overdraft):
         return value
     currency = registry[value["currency"]]
-    money_value = currency.from_subunit(value["deficit_subunits"])
+    money_value = currency.from_subunit(value["overdraft_subunits"])
     return Overdraft(money_value)
 
 
 def serialize_overdraft(value: Overdraft[Any], *args: object) -> OverdraftDict:
     return {
-        "deficit_subunits": value.money.as_subunit(),
+        "overdraft_subunits": value.money.as_subunit(),
         "currency": str(value.money.currency),
     }
 
 
 overdraft_dict: Final = core_schema.typed_dict_schema(
     {
-        "deficit_subunits": core_schema.typed_dict_field(core_schema.int_schema(gt=0)),
+        "overdraft_subunits": core_schema.typed_dict_field(core_schema.int_schema(gt=0)),
         "currency": core_schema.typed_dict_field(currency_value_schema(registry)),
     }
 )

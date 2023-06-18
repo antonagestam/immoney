@@ -212,7 +212,7 @@ def test_can_roundtrip_subunit_fraction_model(numerator: int, denominator: int) 
 def test_can_roundtrip_overdraft_model() -> None:
     data = {
         "bar": {
-            "deficit_subunits": 89999,
+            "overdraft_subunits": 89999,
             "currency": "CUP",
         }
     }
