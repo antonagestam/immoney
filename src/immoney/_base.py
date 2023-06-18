@@ -130,6 +130,7 @@ class Currency(Frozen, abc.ABC):
         **kwargs: object,
     ) -> CoreSchema:
         from ._pydantic import build_currency_schema
+
         return build_currency_schema(cls)
 
 
@@ -331,9 +332,13 @@ class Money(Frozen, Generic[C], metaclass=InstanceCache):
         *args: object,
         **kwargs: object,
     ) -> CoreSchema:
-        from ._pydantic import build_generic_currency_schema, MoneyAdapter
+        from ._pydantic import MoneyAdapter
+        from ._pydantic import build_generic_currency_schema
+
         return build_generic_currency_schema(
-            cls=cls, source_type=source_type, adapter=MoneyAdapter,
+            cls=cls,
+            source_type=source_type,
+            adapter=MoneyAdapter,
         )
 
 
@@ -408,9 +413,13 @@ class SubunitFraction(Frozen, Generic[C], metaclass=InstanceCache):
         *args: object,
         **kwargs: object,
     ) -> CoreSchema:
-        from ._pydantic import build_generic_currency_schema, SubunitFractionAdapter
+        from ._pydantic import SubunitFractionAdapter
+        from ._pydantic import build_generic_currency_schema
+
         return build_generic_currency_schema(
-            cls=cls, source_type=source_type, adapter=SubunitFractionAdapter,
+            cls=cls,
+            source_type=source_type,
+            adapter=SubunitFractionAdapter,
         )
 
 
@@ -502,7 +511,11 @@ class Overdraft(Frozen, Generic[C], metaclass=InstanceCache):
         *args: object,
         **kwargs: object,
     ) -> CoreSchema:
-        from ._pydantic import build_generic_currency_schema, OverdraftAdapter
+        from ._pydantic import OverdraftAdapter
+        from ._pydantic import build_generic_currency_schema
+
         return build_generic_currency_schema(
-            cls=cls, source_type=source_type, adapter=OverdraftAdapter,
+            cls=cls,
+            source_type=source_type,
+            adapter=OverdraftAdapter,
         )
