@@ -40,8 +40,6 @@ if TYPE_CHECKING:
     from .registry import CurrencyRegistry
 
 CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
-# Checking if a number is a power of 10 seems either complicated or unclean, so we just
-# enumerate the 20 smallest ones.
 valid_subunit: Final = frozenset({10**i for i in range(20)})
 
 
