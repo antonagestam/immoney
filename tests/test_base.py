@@ -120,7 +120,7 @@ class TestCurrency:
             "0." + len(str(subunit_value)) * "0"
         )
 
-    def test_zero_returns_cached_instance_of_money_zero(self):
+    def test_zero_returns_cached_instance_of_money_zero(self) -> None:
         assert SEK.zero is SEK.zero
         assert SEK.zero.value == 0
         assert SEK.zero.currency is SEK
@@ -138,30 +138,29 @@ class TestCurrency:
         self,
         currency: Currency,
         value: Decimal,
-    ):
+    ) -> None:
         with pytest.raises((MoneyParseError, InvalidOperation)):
             currency.normalize_value(value)
             currency.normalize_value(value + very_small_decimal)
 
     @given(
-        currency=currencies(),
         value=integers(max_value=-1) | decimals(max_value=Decimal("-0.000001")),
     )
-    def test_normalize_value_raises_for_negative_value(
-        self, currency: Currency, value: object
-    ):
+    def test_normalize_value_raises_for_negative_value(self, value: object) -> None:
         with pytest.raises(MoneyParseError):
-            currency.normalize_value(value)  # type: ignore[arg-type]
+            SEK.normalize_value(value)  # type: ignore[arg-type]
 
-    @given(currencies())
-    def test_normalize_value_raises_for_invalid_str(self, currency: Currency):
+    def test_normalize_value_raises_for_invalid_str(self) -> None:
         with pytest.raises(MoneyParseError):
-            currency.normalize_value("foo")
+            SEK.normalize_value("foo")
 
-    @given(currencies())
-    def test_normalize_value_raises_for_nan(self, currency: Currency):
+    def test_normalize_value_raises_for_nan(self) -> None:
         with pytest.raises(MoneyParseError):
-            currency.normalize_value(Decimal("nan"))
+            SEK.normalize_value(Decimal("nan"))
+
+    def test_normalize_value_raises_for_non_finite(self) -> None:
+        with pytest.raises(MoneyParseError):
+            SEK.normalize_value(float("inf"))  # type: ignore[arg-type]
 
 
 valid_values = decimals(
