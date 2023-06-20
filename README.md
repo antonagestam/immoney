@@ -137,3 +137,68 @@ KeyError: 'foo'
 
 For custom currency implementations, `immoney.registry.CurrencyCollector` can be used to
 construct a custom registry.
+
+#### Custom currency registries
+
+The library ships with a sensible set of default currencies, however, you might want to
+use a custom registry for two reasons:
+
+- You want to use non-default currencies.
+- You only want to allow a subset of the default currencies.
+
+To achieve this, you can construct a custom set of types. It's recommended to use a
+custom abstract base class for this, this way things will also play nice with the
+Pydantic integration.
+
+```python
+import abc
+from typing import Final
+from immoney.registry import CurrencyCollector
+from immoney.currencies import Currency
+
+__currencies = CurrencyCollector()
+
+
+class SpaceCurrency(Currency, abc.ABC):
+    ...
+
+
+class MoonCoinType(SpaceCurrency):
+    subunit = 100_000
+    code = "MCN"
+
+
+MCN: Final = MoonCoinType()
+__currencies.add(MCN)
+
+
+class JupiterDollarType(SpaceCurrency):
+    subunit = 100
+    code = "JCN"
+
+
+JCN: Final = JupiterDollarType()
+__currencies.add(JCN)
+
+custom_registry: Final = __currencies.finalize()
+```
+
+#### Pydantic V2 support
+
+The `Currency`, `Money`, `SubunitFraction` and `Overdraft` entities can all be used as
+Pydantic model fields.
+
+```pycon
+>>> from pydantic import BaseModel
+>>> from immoney import Money
+>>> from immoney.currencies import USD
+>>> class Model(BaseModel, frozen=True):
+...     money: Money
+>>> print(instance.model_dump_json(indent=2))
+{
+  "money": {
+    "subunits": 25000,
+    "currency": "USD"
+  }
+}
+```
