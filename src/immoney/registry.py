@@ -1,9 +1,8 @@
 from collections.abc import Mapping
+from types import MappingProxyType
 from typing import Generic
 from typing import TypeAlias
 from typing import TypeVar
-
-from immutables import Map
 
 from ._base import Currency
 
@@ -21,4 +20,4 @@ class CurrencyCollector(Generic[C]):
         self.__collection.append((currency.code, currency))
 
     def finalize(self) -> CurrencyRegistry[C]:
-        return Map(self.__collection)
+        return MappingProxyType(dict(self.__collection))
