@@ -126,7 +126,7 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
         ) -> Money[Currency]:
             if isinstance(value, Money):
                 if value.currency.code not in _registry:
-                    raise ValueError("Currency not registered.")
+                    raise ValueError("Currency is not registered.")
                 return value
             currency = _registry[value["currency"]]
             return currency.from_subunit(value["subunits"])
@@ -147,7 +147,8 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
                         f"{_currency!r}."
                     )
                 return value
-            if value["currency"] != _currency.code:
+            # We ignore coverage here as this is enforced by schema.
+            if value["currency"] != _currency.code:  # pragma: no cover
                 raise ValueError(f"Invalid currency, expected {_currency!s}.")
             return _currency.from_subunit(value["subunits"])
 
@@ -221,7 +222,8 @@ class SubunitFractionAdapter(
                         f"{_currency!r}."
                     )
                 return value
-            if value["currency"] != _currency.code:
+            # We ignore coverage here as this is enforced by schema.
+            if value["currency"] != _currency.code:  # pragma: no cover
                 raise ValueError(f"Invalid currency, expected {_currency!s}.")
             fraction = Fraction(value["numerator"], value["denominator"])
             return _currency.fraction(fraction)
@@ -286,7 +288,8 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
                         f"{_currency!r}."
                     )
                 return value
-            if value["currency"] != _currency.code:
+            # We ignore coverage here as this is enforced by schema.
+            if value["currency"] != _currency.code:  # pragma: no cover
                 raise ValueError(f"Invalid currency, expected {_currency!s}.")
             money_value = _currency.from_subunit(value["overdraft_subunits"])
             return Overdraft(money_value)
@@ -337,21 +340,21 @@ def build_currency_schema(
     cls: type[Currency],
 ) -> core_schema.CoreSchema:
     if abc.ABC not in cls.__bases__:
-        raise TypeError(
+        raise NotImplementedError(
             "Using concrete Currency types as Pydantic fields is not yet supported."
         )
 
     cls_registry = cls.get_default_registry()
 
     def validate_currency(
-        value: str | Currency,
+        value: str,
         *args: object,
         registry: CurrencyRegistry = cls_registry,
     ) -> Currency:
-        if isinstance(value, Currency):
-            return value
         if isinstance(value, str):
             return registry[value]
+        # We ignore coverage here as this is enforced by schema.
+        # pragma: no cover
         raise TypeError("Invalid type for Currency field.")
 
     return or_is_instance(

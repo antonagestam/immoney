@@ -27,6 +27,18 @@ from .custom_currency import MCN
 from .custom_currency import CustomCurrency
 
 
+def test_cannot_use_concrete_currency_as_field_type() -> None:
+    with pytest.raises(
+        NotImplementedError,
+        match=(
+            r"^Using concrete Currency types as Pydantic fields is not yet supported"
+        ),
+    ):
+
+        class SpecializedCurrencyModel(BaseModel):
+            currency: INRType
+
+
 class DefaultCurrencyModel(BaseModel):
     currency: Currency
 
@@ -192,7 +204,7 @@ class TestMoneyModel:
         assert instance.money == USD("49.90")
 
     def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
-        with pytest.raises(ValidationError, match=r"Currency not registered"):
+        with pytest.raises(ValidationError, match=r"Currency is not registered"):
             MoneyModel(money=JCN(1))
 
     def test_can_generate_schema(self) -> None:
@@ -323,7 +335,7 @@ class TestCustomMoneyModel:
         assert instance.money == MCN("49.90")
 
     def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
-        with pytest.raises(ValidationError, match=r"Currency not registered"):
+        with pytest.raises(ValidationError, match=r"Currency is not registered"):
             CustomMoneyModel(money=USD(1))  # type: ignore[arg-type]
 
     def test_can_generate_schema(self) -> None:
