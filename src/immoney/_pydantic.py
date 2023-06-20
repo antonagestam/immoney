@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 from fractions import Fraction
-from typing import Any
+from typing import Any, Iterable, Container
 from typing import Protocol
 from typing import TypedDict
 from typing import TypeVar
@@ -10,7 +10,6 @@ from typing import get_args
 
 from pydantic_core import core_schema
 from pydantic_core.core_schema import GeneralValidatorFunction
-from pydantic_core.core_schema import TypedDictSchema
 
 from . import Currency
 from . import Money
@@ -41,12 +40,22 @@ def extract_currency_type_arg(source_type: type) -> type[Currency]:
         case (type() as currency_type,):
             assert issubclass(currency_type, Currency)
             return currency_type
-        case invalid:
+        case invalid:  # pragma: no cover
             raise TypeError(f"Invalid type args: {invalid!r}.")
 
 
-def currency_value_schema(registry: CurrencyRegistry) -> core_schema.LiteralSchema:
-    return core_schema.literal_schema(expected=list(registry.keys()))
+def or_is_instance(
+    cls: type,
+    wrapped: core_schema.CoreSchema,
+    serialization: core_schema.SerSchema | None = None,
+) -> core_schema.UnionSchema:
+    return core_schema.union_schema(
+        choices=[
+            core_schema.is_instance_schema(cls=cls),
+            wrapped,
+        ],
+        serialization=serialization,
+    )
 
 
 T_contra = TypeVar(
@@ -67,12 +76,7 @@ class GenericCurrencyAdapter(Protocol[T_contra, U_co]):
 
     @staticmethod
     @abc.abstractmethod
-    def schema_from_registry(registry: CurrencyRegistry) -> TypedDictSchema:
-        ...
-
-    @staticmethod
-    @abc.abstractmethod
-    def schema_from_currency(currency: Currency) -> TypedDictSchema:
+    def schema(currency_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
         ...
 
     @staticmethod
@@ -95,33 +99,21 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
         }
 
     @staticmethod
-    def schema_from_registry(registry: CurrencyRegistry) -> TypedDictSchema:
-        return core_schema.typed_dict_schema(
-            {
-                "subunits": core_schema.typed_dict_field(
-                    core_schema.int_schema(gt=0),
-                    required=True,
-                ),
-                "currency": core_schema.typed_dict_field(
-                    currency_value_schema(registry),
-                    required=True,
-                ),
-            }
-        )
-
-    @staticmethod
-    def schema_from_currency(currency: Currency) -> TypedDictSchema:
-        return core_schema.typed_dict_schema(
-            {
-                "subunits": core_schema.typed_dict_field(
-                    core_schema.int_schema(gt=0),
-                    required=True,
-                ),
-                "currency": core_schema.typed_dict_field(
-                    core_schema.literal_schema(expected=[currency.code]),
-                    required=True,
-                ),
-            }
+    def schema(currency_schema: core_schema.LiteralSchema) -> core_schema.CoreSchema:
+        return or_is_instance(
+            cls=Money,
+            wrapped=core_schema.typed_dict_schema(
+                {
+                    "subunits": core_schema.typed_dict_field(
+                        core_schema.int_schema(gt=0),
+                        required=True,
+                    ),
+                    "currency": core_schema.typed_dict_field(
+                        currency_schema,
+                        required=True,
+                    ),
+                }
+            ),
         )
 
     @staticmethod
@@ -133,7 +125,7 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
         ) -> Money[Currency]:
             if isinstance(value, Money):
                 if value.currency.code not in _registry:
-                    raise ValueError("Currency not register.")
+                    raise ValueError("Currency not registered.")
                 return value
             currency = _registry[value["currency"]]
             return currency.from_subunit(value["subunits"])
@@ -176,41 +168,25 @@ class SubunitFractionAdapter(
         }
 
     @staticmethod
-    def schema_from_registry(registry: CurrencyRegistry) -> TypedDictSchema:
-        return core_schema.typed_dict_schema(
-            {
-                "numerator": core_schema.typed_dict_field(
-                    core_schema.int_schema(),
-                    required=True,
-                ),
-                "denominator": core_schema.typed_dict_field(
-                    core_schema.int_schema(),
-                    required=True,
-                ),
-                "currency": core_schema.typed_dict_field(
-                    currency_value_schema(registry),
-                    required=True,
-                ),
-            }
-        )
-
-    @staticmethod
-    def schema_from_currency(currency: Currency) -> TypedDictSchema:
-        return core_schema.typed_dict_schema(
-            {
-                "numerator": core_schema.typed_dict_field(
-                    core_schema.int_schema(),
-                    required=True,
-                ),
-                "denominator": core_schema.typed_dict_field(
-                    core_schema.int_schema(),
-                    required=True,
-                ),
-                "currency": core_schema.typed_dict_field(
-                    core_schema.literal_schema(expected=[currency.code]),
-                    required=True,
-                ),
-            }
+    def schema(currency_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        return or_is_instance(
+            cls=SubunitFraction,
+            wrapped=core_schema.typed_dict_schema(
+                {
+                    "numerator": core_schema.typed_dict_field(
+                        core_schema.int_schema(),
+                        required=True,
+                    ),
+                    "denominator": core_schema.typed_dict_field(
+                        core_schema.int_schema(),
+                        required=True,
+                    ),
+                    "currency": core_schema.typed_dict_field(
+                        currency_schema,
+                        required=True,
+                    ),
+                }
+            ),
         )
 
     @staticmethod
@@ -261,33 +237,21 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
         }
 
     @staticmethod
-    def schema_from_registry(registry: CurrencyRegistry) -> TypedDictSchema:
-        return core_schema.typed_dict_schema(
-            {
-                "overdraft_subunits": core_schema.typed_dict_field(
-                    core_schema.int_schema(gt=0),
-                    required=True,
-                ),
-                "currency": core_schema.typed_dict_field(
-                    currency_value_schema(registry),
-                    required=True,
-                ),
-            }
-        )
-
-    @staticmethod
-    def schema_from_currency(currency: Currency) -> TypedDictSchema:
-        return core_schema.typed_dict_schema(
-            {
-                "overdraft_subunits": core_schema.typed_dict_field(
-                    core_schema.int_schema(gt=0),
-                    required=True,
-                ),
-                "currency": core_schema.typed_dict_field(
-                    core_schema.literal_schema(expected=[currency.code]),
-                    required=True,
-                ),
-            }
+    def schema(currency_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        return or_is_instance(
+            cls=Overdraft,
+            wrapped=core_schema.typed_dict_schema(
+                {
+                    "overdraft_subunits": core_schema.typed_dict_field(
+                        core_schema.int_schema(gt=0),
+                        required=True,
+                    ),
+                    "currency": core_schema.typed_dict_field(
+                        currency_schema,
+                        required=True,
+                    ),
+                }
+            )
         )
 
     @staticmethod
@@ -329,6 +293,10 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
         return validate_overdraft
 
 
+def currency_schema(currencies: Iterable[Currency]) -> core_schema.LiteralSchema:
+    return core_schema.literal_schema([currency.code for currency in currencies])
+
+
 def build_generic_currency_schema(
     cls: type,
     source_type: type,
@@ -337,7 +305,7 @@ def build_generic_currency_schema(
     if source_type is cls:
         # Not specialized allow any default Currency.
         validator = adapter.validator_from_registry(default_registry)
-        schema = adapter.schema_from_registry(default_registry)
+        schema = adapter.schema(currency_schema(default_registry.values()))
 
     else:
         currency_type = extract_currency_type_arg(source_type)
@@ -346,13 +314,13 @@ def build_generic_currency_schema(
         # Handle specialized to intermediate base class.
         if abc.ABC in currency_type.__bases__:
             validator = adapter.validator_from_registry(cls_registry)
-            schema = adapter.schema_from_registry(cls_registry)
+            schema = adapter.schema(currency_schema(cls_registry.values()))
 
         # Handle specialized to a concrete currency class.
         else:
             currency = cls_registry[currency_type.code]
             validator = adapter.validator_from_currency(currency)
-            schema = adapter.schema_from_currency(currency)
+            schema = adapter.schema(currency_schema((currency,)))
 
     return core_schema.general_after_validator_function(
         schema=schema,
@@ -385,8 +353,11 @@ def build_currency_schema(
             return registry[value]
         raise TypeError("Invalid type for Currency field.")
 
-    return core_schema.general_after_validator_function(
-        function=validate_currency,
-        schema=currency_value_schema(cls_registry),
+    return or_is_instance(
+        cls=cls,
+        wrapped=core_schema.general_after_validator_function(
+            function=validate_currency,
+            schema=currency_schema(cls_registry.values()),
+        ),
         serialization=core_schema.to_string_ser_schema(),
     )
