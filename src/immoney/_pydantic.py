@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import abc
+from collections.abc import Iterable
 from fractions import Fraction
-from typing import Any, Iterable, Container
+from typing import Any
 from typing import Protocol
 from typing import TypedDict
 from typing import TypeVar
@@ -99,7 +100,7 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
         }
 
     @staticmethod
-    def schema(currency_schema: core_schema.LiteralSchema) -> core_schema.CoreSchema:
+    def schema(currency_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
         return or_is_instance(
             cls=Money,
             wrapped=core_schema.typed_dict_schema(
@@ -251,7 +252,7 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
                         required=True,
                     ),
                 }
-            )
+            ),
         )
 
     @staticmethod

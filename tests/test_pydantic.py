@@ -10,9 +10,11 @@ from immoney import Currency
 from immoney import Money
 from immoney import Overdraft
 from immoney import SubunitFraction
-from immoney.currencies import CUP, NOKType, SEKType, SEK, EUR
+from immoney.currencies import CUP
+from immoney.currencies import EUR
 from immoney.currencies import INR
 from immoney.currencies import NOK
+from immoney.currencies import SEK
 from immoney.currencies import USD
 from immoney.currencies import CUPType
 from immoney.currencies import INRType
@@ -40,7 +42,6 @@ class TestDefaultCurrencyModel:
         assert instance.currency is NOK
         assert json.loads(instance.model_dump_json()) == data
 
-
     @pytest.mark.parametrize(
         ("value",),
         (
@@ -52,7 +53,10 @@ class TestDefaultCurrencyModel:
             ("MCN",),
         ),
     )
-    def test_validation_raises_validation_error_for_invalid_values(self, value: object,) -> None:
+    def test_validation_raises_validation_error_for_invalid_values(
+        self,
+        value: object,
+    ) -> None:
         with pytest.raises(
             ValidationError,
             match=r"Input should be.*\[type=literal_error",
@@ -69,7 +73,7 @@ class TestDefaultCurrencyModel:
             ValidationError,
             match=r"Input should be.*\[type=literal_error",
         ):
-            DefaultCurrencyModel(currency=object())
+            DefaultCurrencyModel(currency=object())  # type: ignore[arg-type]
 
     def test_can_generate_schema(self) -> None:
         assert DefaultCurrencyModel.model_json_schema() == {
@@ -115,7 +119,10 @@ class TestCustomCurrencyModel:
             ("USD",),
         ),
     )
-    def test_validation_raises_validation_error_for_invalid_values(self, value: object,) -> None:
+    def test_validation_raises_validation_error_for_invalid_values(
+        self,
+        value: object,
+    ) -> None:
         with pytest.raises(
             ValidationError,
             match=r"Input should be.*\[type=literal_error",
@@ -132,7 +139,7 @@ class TestCustomCurrencyModel:
             ValidationError,
             match=r"Input should be.*\[type=literal_error",
         ):
-            CustomCurrencyModel(currency=USD)
+            CustomCurrencyModel(currency=USD)  # type: ignore[arg-type]
 
     def test_can_generate_schema(self) -> None:
         assert CustomCurrencyModel.model_json_schema() == {
@@ -149,8 +156,8 @@ class TestCustomCurrencyModel:
 
 
 class MoneyModel(BaseModel):
-    # Important: do not specialize this type. The suppressed type error is expected.
-    money: Money  # type: ignore[type-arg]
+    # Important: do not specialize this type.
+    money: Money
 
 
 class TestMoneyModel:
@@ -173,7 +180,10 @@ class TestMoneyModel:
         ):
             MoneyModel.model_validate(
                 {
-                    "money": {"currency": "JCN", "subunits": 4990,},
+                    "money": {
+                        "currency": "JCN",
+                        "subunits": 4990,
+                    },
                 }
             )
 
@@ -182,10 +192,7 @@ class TestMoneyModel:
         assert instance.money == USD("49.90")
 
     def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
-        with pytest.raises(
-            ValidationError,
-            match=r"Currency not registered"
-        ):
+        with pytest.raises(ValidationError, match=r"Currency not registered"):
             MoneyModel(money=JCN(1))
 
     def test_can_generate_schema(self) -> None:
@@ -249,11 +256,8 @@ class TestSpecializedMoneyModel:
         assert instance.money == USD("49.90")
 
     def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
-        with pytest.raises(
-            ValidationError,
-            match=r"Invalid currency"
-        ):
-            SpecializedMoneyModel(money=SEK(1))
+        with pytest.raises(ValidationError, match=r"Invalid currency"):
+            SpecializedMoneyModel(money=SEK(1))  # type: ignore[arg-type]
 
     def test_can_generate_schema(self) -> None:
         assert SpecializedMoneyModel.model_json_schema() == {
@@ -319,11 +323,8 @@ class TestCustomMoneyModel:
         assert instance.money == MCN("49.90")
 
     def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
-        with pytest.raises(
-            ValidationError,
-            match=r"Currency not registered"
-        ):
-            CustomMoneyModel(money=USD(1))
+        with pytest.raises(ValidationError, match=r"Currency not registered"):
+            CustomMoneyModel(money=USD(1))  # type: ignore[arg-type]
 
     def test_can_generate_schema(self) -> None:
         assert CustomMoneyModel.model_json_schema() == {
@@ -352,7 +353,7 @@ class TestCustomMoneyModel:
 
 
 class FractionModel(BaseModel):
-    value_field: SubunitFraction  # type: ignore[type-arg]
+    value_field: SubunitFraction
 
 
 class TestFractionModel:
@@ -406,10 +407,7 @@ class TestFractionModel:
 
     def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
         fraction = JCN.fraction(Fraction(13, 7))
-        with pytest.raises(
-            ValidationError,
-            match=r"Currency is not registered"
-        ):
+        with pytest.raises(ValidationError, match=r"Currency is not registered"):
             FractionModel(value_field=fraction)
 
     def test_can_generate_schema(self) -> None:
@@ -493,11 +491,8 @@ class TestCustomFractionModel:
 
     def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
         fraction = SEK.fraction(Fraction(13, 7))
-        with pytest.raises(
-            ValidationError,
-            match=r"Currency is not registered"
-        ):
-            CustomFractionModel(value_field=fraction)
+        with pytest.raises(ValidationError, match=r"Currency is not registered"):
+            CustomFractionModel(value_field=fraction)  # type: ignore[arg-type]
 
     def test_can_generate_schema(self) -> None:
         assert CustomFractionModel.model_json_schema() == {
@@ -577,11 +572,8 @@ class TestSpecializedFractionModel:
 
     def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
         fraction = NOK.fraction(Fraction(13, 7))
-        with pytest.raises(
-            ValidationError,
-            match=r"Invalid currency"
-        ):
-            SpecializedFractionModel(value_field=fraction)
+        with pytest.raises(ValidationError, match=r"Invalid currency"):
+            SpecializedFractionModel(value_field=fraction)  # type: ignore[arg-type]
 
     def test_can_generate_schema(self) -> None:
         assert SpecializedFractionModel.model_json_schema() == {
@@ -615,7 +607,7 @@ class TestSpecializedFractionModel:
 
 
 class DefaultOverdraftModel(BaseModel):
-    overdraft: Overdraft  # type: ignore[type-arg]
+    overdraft: Overdraft
 
 
 class TestDefaultOverdraftModel:
@@ -652,10 +644,7 @@ class TestDefaultOverdraftModel:
 
     def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
         overdraft = JCN.overdraft("899.99")
-        with pytest.raises(
-            ValidationError,
-            match=r"Currency is not registered"
-        ):
+        with pytest.raises(ValidationError, match=r"Currency is not registered"):
             DefaultOverdraftModel(overdraft=overdraft)
 
     def test_can_generate_schema(self) -> None:
@@ -724,11 +713,8 @@ class TestCustomOverdraftModel:
 
     def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
         overdraft = SEK.overdraft("89.50")
-        with pytest.raises(
-            ValidationError,
-            match=r"Currency is not registered"
-        ):
-            CustomOverdraftModel(overdraft=overdraft)
+        with pytest.raises(ValidationError, match=r"Currency is not registered"):
+            CustomOverdraftModel(overdraft=overdraft)  # type: ignore[arg-type]
 
     def test_can_generate_schema(self) -> None:
         assert CustomOverdraftModel.model_json_schema() == {
@@ -793,11 +779,8 @@ class TestSpecializedOverdraftModel:
 
     def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
         overdraft = EUR.overdraft(99)
-        with pytest.raises(
-            ValidationError,
-            match=r"Invalid currency"
-        ):
-            SpecializedOverdraftModel(overdraft=overdraft)
+        with pytest.raises(ValidationError, match=r"Invalid currency"):
+            SpecializedOverdraftModel(overdraft=overdraft)  # type: ignore[arg-type]
 
     def test_can_generate_schema(self) -> None:
         assert SpecializedOverdraftModel.model_json_schema() == {
