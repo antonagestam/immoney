@@ -93,7 +93,7 @@ the price of an item in a store, can be discovered with a static type checker.
 Instances of `Money` do not support direct comparison with numeric scalar values. For
 convenience an exception is made for integer zero, which is always unambiguous.
 
-```python
+```pycon
 >>> from immoney.currencies import SEK
 >>> SEK(1) == 1
 False
