@@ -8,6 +8,12 @@
     <a href=https://pypi.org/project/immoney/><img src=https://img.shields.io/pypi/pyversions/immoney.svg?color=informational&label=Python alt="Python versions"></a>
 </p>
 
+### Installation
+
+```shell
+$ pip install --require-venv immoney
+```
+
 ### Design goals
 
 There are a few core design aspects of this library that each eliminate entire classes
@@ -181,6 +187,12 @@ custom_registry: Final = __currencies.finalize()
 ```
 
 #### Pydantic V2 support
+
+Install a compatible Pydantic version by supplying the `[pydantic]` extra.
+
+```shell
+$ pip install --require-venv immoney[pydantic]
+```
 
 The `Currency`, `Money`, `SubunitFraction` and `Overdraft` entities can all be used as
 Pydantic model fields.
