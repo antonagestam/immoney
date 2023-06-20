@@ -5,4 +5,4 @@ from ._base import Round
 from ._base import SubunitFraction
 
 __all__ = ("Money", "Currency", "SubunitFraction", "Round", "Overdraft")
-__version__ = "0.1.0"
+__version__ = "0.2.0"
