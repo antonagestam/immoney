@@ -25,6 +25,7 @@ from typing import overload
 
 from abcattrs import Abstract
 from abcattrs import abstractattrs
+from typing_extensions import Self
 
 from ._cache import InstanceCache
 from ._frozen import Frozen
@@ -39,7 +40,6 @@ if TYPE_CHECKING:
 
     from .registry import CurrencyRegistry
 
-CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
 valid_subunit: Final = frozenset({10**i for i in range(20)})
 
 
@@ -64,7 +64,7 @@ class Currency(Frozen, abc.ABC):
     def __repr__(self) -> str:
         return f"Currency(code={self.code}, subunit={self.subunit})"
 
-    def __call__(self: CurrencySelf, value: Decimal | int | str) -> Money[CurrencySelf]:
+    def __call__(self, value: Decimal | int | str) -> Money[Self]:
         return Money(value, self)
 
     def __hash__(self) -> int:
@@ -76,7 +76,7 @@ class Currency(Frozen, abc.ABC):
         return Decimal("0." + int(math.log10(self.subunit)) * "0")
 
     @cached_property
-    def zero(self: CurrencySelf) -> Money[CurrencySelf]:
+    def zero(self) -> Money[Self]:
         return Money(0, self)
 
     def normalize_value(self, value: Decimal | int | str) -> PositiveDecimal:
@@ -98,23 +98,23 @@ class Currency(Frozen, abc.ABC):
 
         return quantized
 
-    def from_subunit(self: CurrencySelf, value: int) -> Money[CurrencySelf]:
+    def from_subunit(self, value: int) -> Money[Self]:
         return Money.from_subunit(value, self)
 
     @cached_property
-    def one_subunit(self: CurrencySelf) -> Money[CurrencySelf]:
+    def one_subunit(self) -> Money[Self]:
         return self.from_subunit(1)
 
     def fraction(
-        self: CurrencySelf,
+        self,
         subunit_value: Fraction | Decimal | int,
-    ) -> SubunitFraction[CurrencySelf]:
+    ) -> SubunitFraction[Self]:
         return SubunitFraction(subunit_value, self)
 
     def overdraft(
-        self: CurrencySelf,
+        self: Self,
         value: Decimal | int | str,
-    ) -> Overdraft[CurrencySelf]:
+    ) -> Overdraft[Self]:
         return Overdraft(Money(value, self))
 
     @classmethod
@@ -136,7 +136,6 @@ class Currency(Frozen, abc.ABC):
 
 C_co = TypeVar("C_co", bound=Currency, covariant=True)
 C_inv = TypeVar("C_inv", bound=Currency, covariant=False, contravariant=False)
-MoneySelf = TypeVar("MoneySelf", bound="Money[Any]")
 
 
 @final
@@ -224,7 +223,7 @@ class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
             )
         return NotImplemented
 
-    def __pos__(self: MoneySelf) -> MoneySelf:
+    def __pos__(self) -> Self:
         return self
 
     def __neg__(self: Money[C_co]) -> Overdraft[C_co]:
@@ -316,7 +315,7 @@ class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
             raise DivisionByZero
         return SubunitFraction.from_money(self, other)
 
-    def __abs__(self: MoneySelf) -> MoneySelf:
+    def __abs__(self) -> Self:
         return self
 
     def as_subunit(self) -> int:
