@@ -135,9 +135,6 @@ Traceback (most recent call last):
 KeyError: 'foo'
 ```
 
-For custom currency implementations, `immoney.registry.CurrencyCollector` can be used to
-construct a custom registry.
-
 #### Custom currency registries
 
 The library ships with a sensible set of default currencies, however, you might want to
