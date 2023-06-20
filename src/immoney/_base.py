@@ -18,8 +18,9 @@ from typing import Any
 from typing import ClassVar
 from typing import Final
 from typing import Generic
+from typing import NewType
+from typing import TypeAlias
 from typing import TypeVar
-from typing import cast
 from typing import final
 from typing import overload
 
@@ -32,13 +33,14 @@ from ._frozen import Frozen
 from .errors import DivisionByZero
 from .errors import InvalidSubunit
 from .errors import MoneyParseError
-from .types import ParsableMoneyValue
-from .types import PositiveDecimal
 
 if TYPE_CHECKING:
     from pydantic_core.core_schema import CoreSchema
 
     from .registry import CurrencyRegistry
+
+ParsableMoneyValue: TypeAlias = int | str | Decimal
+PositiveDecimal = NewType("PositiveDecimal", Decimal)
 
 valid_subunit: Final = frozenset({10**i for i in range(20)})
 
@@ -80,23 +82,31 @@ class Currency(Frozen, abc.ABC):
         return Money(0, self)
 
     def normalize_value(self, value: Decimal | int | str) -> PositiveDecimal:
-        try:
-            positive = PositiveDecimal.parse(value)
-        except TypeError as e:
-            raise MoneyParseError(
-                "Failed to interpret value as non-negative decimal"
-            ) from e
+        if not isinstance(value, Decimal):
+            try:
+                value = Decimal(value)
+            except decimal.InvalidOperation:
+                raise MoneyParseError("Failed parsing Decimal")
 
-        quantized = cast(PositiveDecimal, positive.quantize(self.decimal_exponent))
+        if value.is_nan():
+            raise MoneyParseError("Cannot parse from NaN")
 
-        if positive != quantized:
+        if not value.is_finite():
+            raise MoneyParseError("Cannot parse from non-finite")
+
+        if value < 0:
+            raise MoneyParseError("Cannot parse from negative value")
+
+        quantized = value.quantize(self.decimal_exponent)
+
+        if value != quantized:
             raise MoneyParseError(
                 f"Cannot interpret value as Money of currency {self.code} without loss "
                 f"of precision. Explicitly round the value or consider using "
                 f"SubunitFraction."
             )
 
-        return quantized
+        return PositiveDecimal(quantized)
 
     def from_subunit(self, value: int) -> Money[Self]:
         return Money.from_subunit(value, self)
@@ -153,7 +163,7 @@ class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
         value: ParsableMoneyValue,
         currency: C_inv,
         /,
-    ) -> tuple[Decimal, C_inv]:
+    ) -> tuple[PositiveDecimal, C_inv]:
         if not isinstance(currency, Currency):
             raise TypeError(
                 f"Argument 'currency' of {cls.__qualname__!r} must be a Currency, "
