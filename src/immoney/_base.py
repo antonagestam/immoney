@@ -151,7 +151,12 @@ class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
         self.currency: Final = currency
 
     @classmethod
-    def _normalize(cls, value: ParsableMoneyValue, currency: C_inv, /) -> tuple[Decimal, C_inv]:
+    def _normalize(
+        cls,
+        value: ParsableMoneyValue,
+        currency: C_inv,
+        /,
+    ) -> tuple[Decimal, C_inv]:
         if not isinstance(currency, Currency):
             raise TypeError(
                 f"Argument 'currency' of {cls.__qualname__!r} must be a Currency, "
@@ -236,7 +241,10 @@ class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
     def __mul__(self: Money[C_co], other: Decimal) -> SubunitFraction[C_co]:
         ...
 
-    def __mul__(self, other: object) -> Money[C_co] | SubunitFraction[C_co] | Overdraft[C_co]:
+    def __mul__(
+        self,
+        other: object,
+    ) -> Money[C_co] | SubunitFraction[C_co] | Overdraft[C_co]:
         if isinstance(other, int):
             return (
                 Money(self.value * other, self.currency)
@@ -259,7 +267,8 @@ class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
         ...
 
     def __rmul__(
-        self: Money[C_co], other: int | Decimal
+        self: Money[C_co],
+        other: int | Decimal,
     ) -> Money[C_co] | SubunitFraction[C_co] | Overdraft[C_co]:
         return self.__mul__(other)
 
@@ -371,7 +380,11 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
         self.currency: Final = currency
 
     @classmethod
-    def _normalize(cls, value: Fraction | Decimal, currency: C_inv) -> tuple[Fraction, C_inv]:
+    def _normalize(
+        cls,
+        value: Fraction | Decimal,
+        currency: C_inv,
+    ) -> tuple[Fraction, C_inv]:
         if not isinstance(currency, Currency):
             raise TypeError(
                 f"Argument 'currency' of {cls.__qualname__!r} must be a Currency, "
@@ -462,7 +475,10 @@ class Overdraft(Frozen, Generic[C_co], metaclass=InstanceCache):
         return NotImplemented
 
     @overload
-    def __add__(self: Overdraft[C_co], other: Money[C_co]) -> Money[C_co] | Overdraft[C_co]:
+    def __add__(
+        self: Overdraft[C_co],
+        other: Money[C_co],
+    ) -> Money[C_co] | Overdraft[C_co]:
         ...
 
     @overload
@@ -476,7 +492,10 @@ class Overdraft(Frozen, Generic[C_co], metaclass=InstanceCache):
             return Overdraft(self.money + other.money)
         return NotImplemented
 
-    def __radd__(self: Overdraft[C_co], other: Money[C_co]) -> Money[C_co] | Overdraft[C_co]:
+    def __radd__(
+        self: Overdraft[C_co],
+        other: Money[C_co],
+    ) -> Money[C_co] | Overdraft[C_co]:
         return self.__add__(other)
 
     @overload
@@ -484,7 +503,10 @@ class Overdraft(Frozen, Generic[C_co], metaclass=InstanceCache):
         ...
 
     @overload
-    def __sub__(self: Overdraft[C_co], other: Overdraft[C_co]) -> Money[C_co] | Overdraft[C_co]:
+    def __sub__(
+        self: Overdraft[C_co],
+        other: Overdraft[C_co],
+    ) -> Money[C_co] | Overdraft[C_co]:
         ...
 
     def __sub__(self: Overdraft[C_co], other: object) -> Money[C_co] | Overdraft[C_co]:

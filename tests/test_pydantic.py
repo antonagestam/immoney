@@ -157,7 +157,7 @@ class TestCustomCurrencyModel:
 
 class MoneyModel(BaseModel):
     # Important: do not specialize this type.
-    money: Money
+    money: Money  # type: ignore[type-arg]
 
 
 class TestMoneyModel:
@@ -353,7 +353,7 @@ class TestCustomMoneyModel:
 
 
 class FractionModel(BaseModel):
-    value_field: SubunitFraction
+    value_field: SubunitFraction  # type: ignore[type-arg]
 
 
 class TestFractionModel:
@@ -607,7 +607,7 @@ class TestSpecializedFractionModel:
 
 
 class DefaultOverdraftModel(BaseModel):
-    overdraft: Overdraft
+    overdraft: Overdraft  # type: ignore[type-arg]
 
 
 class TestDefaultOverdraftModel:
