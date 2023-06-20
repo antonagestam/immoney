@@ -19,6 +19,8 @@ from . import SubunitFraction
 from .currencies import registry as default_registry
 from .registry import CurrencyRegistry
 
+C = TypeVar("C", bound=Currency)
+
 
 class MoneyDict(TypedDict):
     subunits: int
@@ -82,7 +84,9 @@ class GenericCurrencyAdapter(Protocol[T_contra, U_co]):
 
     @staticmethod
     @abc.abstractmethod
-    def validator_from_registry(registry: CurrencyRegistry) -> GeneralValidatorFunction:
+    def validator_from_registry(
+        registry: CurrencyRegistry[Currency],
+    ) -> GeneralValidatorFunction:
         ...
 
     @staticmethod
@@ -118,11 +122,13 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
         )
 
     @staticmethod
-    def validator_from_registry(registry: CurrencyRegistry) -> GeneralValidatorFunction:
+    def validator_from_registry(
+        registry: CurrencyRegistry[C],
+    ) -> GeneralValidatorFunction:
         def validate_money(
             value: MoneyDict | Money[Currency],
             *args: object,
-            _registry: CurrencyRegistry = registry,
+            _registry: CurrencyRegistry[C] = registry,
         ) -> Money[Currency]:
             if isinstance(value, Money):
                 if value.currency.code not in _registry:
@@ -192,11 +198,13 @@ class SubunitFractionAdapter(
         )
 
     @staticmethod
-    def validator_from_registry(registry: CurrencyRegistry) -> GeneralValidatorFunction:
+    def validator_from_registry(
+        registry: CurrencyRegistry[C],
+    ) -> GeneralValidatorFunction:
         def validate_subunit_fraction(
             value: SubunitFractionDict | SubunitFraction[Currency],
             *args: object,
-            _registry: CurrencyRegistry = registry,
+            _registry: CurrencyRegistry[C] = registry,
         ) -> SubunitFraction[Currency]:
             if isinstance(value, SubunitFraction):
                 if value.currency.code not in _registry:
@@ -258,11 +266,13 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
         )
 
     @staticmethod
-    def validator_from_registry(registry: CurrencyRegistry) -> GeneralValidatorFunction:
+    def validator_from_registry(
+        registry: CurrencyRegistry[C],
+    ) -> GeneralValidatorFunction:
         def validate_overdraft(
             value: OverdraftDict | Overdraft[Currency],
             *args: object,
-            _registry: CurrencyRegistry = registry,
+            _registry: CurrencyRegistry[C] = registry,
         ) -> Overdraft[Currency]:
             if isinstance(value, Overdraft):
                 if value.money.currency.code not in _registry:
@@ -336,9 +346,7 @@ def build_generic_currency_schema(
     )
 
 
-def build_currency_schema(
-    cls: type[Currency],
-) -> core_schema.CoreSchema:
+def build_currency_schema(cls: type[C]) -> core_schema.CoreSchema:
     if abc.ABC not in cls.__bases__:
         raise NotImplementedError(
             "Using concrete Currency types as Pydantic fields is not yet supported."
@@ -349,7 +357,7 @@ def build_currency_schema(
     def validate_currency(
         value: str,
         *args: object,
-        registry: CurrencyRegistry = cls_registry,
+        registry: CurrencyRegistry[Currency] = cls_registry,
     ) -> Currency:
         if isinstance(value, str):
             return registry[value]

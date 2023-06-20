@@ -118,7 +118,7 @@ class Currency(Frozen, abc.ABC):
         return Overdraft(Money(value, self))
 
     @classmethod
-    def get_default_registry(cls) -> CurrencyRegistry:
+    def get_default_registry(cls) -> CurrencyRegistry[Currency]:
         from .currencies import registry
 
         return registry

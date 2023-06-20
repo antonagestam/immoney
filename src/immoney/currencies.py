@@ -7,7 +7,7 @@ from . import Currency
 from .registry import CurrencyCollector
 from .registry import CurrencyRegistry
 
-__currencies: Final = CurrencyCollector()
+__currencies: Final = CurrencyCollector[Currency]()
 
 
 @final
@@ -3090,5 +3090,5 @@ ZWN: Final = ZWNType()
 __currencies.add(ZWN)
 
 
-registry: Final[CurrencyRegistry] = __currencies.finalize()
+registry: Final[CurrencyRegistry[Currency]] = __currencies.finalize()
 del __currencies

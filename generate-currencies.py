@@ -14,7 +14,7 @@ from . import Currency
 from .registry import CurrencyCollector
 from .registry import CurrencyRegistry
 
-__currencies: Final = CurrencyCollector()
+__currencies: Final = CurrencyCollector[Currency]()
 """
 currency_template = """
 
@@ -30,7 +30,7 @@ __currencies.add({code})
 registry_template = """\
 
 
-registry: Final[CurrencyRegistry] = __currencies.finalize()
+registry: Final[CurrencyRegistry[Currency]] = __currencies.finalize()
 del __currencies
 """
 
