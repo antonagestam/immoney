@@ -13,6 +13,7 @@ from decimal import ROUND_UP
 from decimal import Decimal
 from fractions import Fraction
 from functools import cached_property
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import ClassVar
 from typing import Final
@@ -24,6 +25,7 @@ from typing import overload
 
 from abcattrs import Abstract
 from abcattrs import abstractattrs
+from typing_extensions import Self
 
 from ._cache import InstanceCache
 from ._frozen import Frozen
@@ -33,8 +35,12 @@ from .errors import MoneyParseError
 from .types import ParsableMoneyValue
 from .types import PositiveDecimal
 
-CurrencySelf = TypeVar("CurrencySelf", bound="Currency")
-valid_subunit: Final = frozenset({1, 10, 100, 1_000, 10_000, 100_000, 1_000_000})
+if TYPE_CHECKING:
+    from pydantic_core.core_schema import CoreSchema
+
+    from .registry import CurrencyRegistry
+
+valid_subunit: Final = frozenset({10**i for i in range(20)})
 
 
 @abstractattrs
@@ -44,6 +50,9 @@ class Currency(Frozen, abc.ABC):
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
+        # Skip validation on intermediary base classes.
+        if abc.ABC in cls.__bases__:
+            return
         if cls.subunit not in valid_subunit:
             raise InvalidSubunit(
                 "Currency subunits other than powers of 10 are not supported"
@@ -55,7 +64,7 @@ class Currency(Frozen, abc.ABC):
     def __repr__(self) -> str:
         return f"Currency(code={self.code}, subunit={self.subunit})"
 
-    def __call__(self: CurrencySelf, value: Decimal | int | str) -> Money[CurrencySelf]:
+    def __call__(self, value: Decimal | int | str) -> Money[Self]:
         return Money(value, self)
 
     def __hash__(self) -> int:
@@ -67,7 +76,7 @@ class Currency(Frozen, abc.ABC):
         return Decimal("0." + int(math.log10(self.subunit)) * "0")
 
     @cached_property
-    def zero(self: CurrencySelf) -> Money[CurrencySelf]:
+    def zero(self) -> Money[Self]:
         return Money(0, self)
 
     def normalize_value(self, value: Decimal | int | str) -> PositiveDecimal:
@@ -89,41 +98,62 @@ class Currency(Frozen, abc.ABC):
 
         return quantized
 
-    def from_subunit(self: CurrencySelf, value: int) -> Money[CurrencySelf]:
+    def from_subunit(self, value: int) -> Money[Self]:
         return Money.from_subunit(value, self)
 
     @cached_property
-    def one_subunit(self: CurrencySelf) -> Money[CurrencySelf]:
+    def one_subunit(self) -> Money[Self]:
         return self.from_subunit(1)
 
     def fraction(
-        self: CurrencySelf,
+        self,
         subunit_value: Fraction | Decimal | int,
-    ) -> SubunitFraction[CurrencySelf]:
+    ) -> SubunitFraction[Self]:
         return SubunitFraction(subunit_value, self)
 
     def overdraft(
-        self: CurrencySelf,
+        self: Self,
         value: Decimal | int | str,
-    ) -> Overdraft[CurrencySelf]:
+    ) -> Overdraft[Self]:
         return Overdraft(Money(value, self))
 
+    @classmethod
+    def get_default_registry(cls) -> CurrencyRegistry[Currency]:
+        from .currencies import registry
 
-C = TypeVar("C", bound=Currency)
-MoneySelf = TypeVar("MoneySelf", bound="Money[Any]")
+        return registry
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls,
+        *args: object,
+        **kwargs: object,
+    ) -> CoreSchema:
+        from ._pydantic import build_currency_schema
+
+        return build_currency_schema(cls)
+
+
+C_co = TypeVar("C_co", bound=Currency, covariant=True)
+C_inv = TypeVar("C_inv", bound=Currency, covariant=False, contravariant=False)
 
 
 @final
-class Money(Frozen, Generic[C], metaclass=InstanceCache):
+class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
     __slots__ = ("value", "currency")
 
-    def __init__(self, value: ParsableMoneyValue, currency: C, /) -> None:
+    def __init__(self, value: ParsableMoneyValue, currency: C_co, /) -> None:
         # Type ignore is safe because metaclass handles normalization.
         self.value: Final[Decimal] = value  # type: ignore[assignment]
         self.currency: Final = currency
 
     @classmethod
-    def _normalize(cls, value: ParsableMoneyValue, currency: C, /) -> tuple[Decimal, C]:
+    def _normalize(
+        cls,
+        value: ParsableMoneyValue,
+        currency: C_inv,
+        /,
+    ) -> tuple[Decimal, C_inv]:
         if not isinstance(currency, Currency):
             raise TypeError(
                 f"Argument 'currency' of {cls.__qualname__!r} must be a Currency, "
@@ -144,37 +174,37 @@ class Money(Frozen, Generic[C], metaclass=InstanceCache):
             return self.currency == other.currency and self.value == other.value
         return NotImplemented
 
-    def __gt__(self: Money[C], other: Money[C]) -> bool:
+    def __gt__(self: Money[C_co], other: Money[C_co]) -> bool:
         if isinstance(other, Money) and self.currency == other.currency:
             return self.value > other.value
         return NotImplemented
 
-    def __ge__(self: Money[C], other: Money[C]) -> bool:
+    def __ge__(self: Money[C_co], other: Money[C_co]) -> bool:
         if isinstance(other, Money) and self.currency == other.currency:
             return self.value >= other.value
         return NotImplemented
 
-    def __lt__(self: Money[C], other: Money[C]) -> bool:
+    def __lt__(self: Money[C_co], other: Money[C_co]) -> bool:
         if isinstance(other, Money) and self.currency == other.currency:
             return self.value < other.value
         return NotImplemented
 
-    def __le__(self: Money[C], other: Money[C]) -> bool:
+    def __le__(self: Money[C_co], other: Money[C_co]) -> bool:
         if isinstance(other, Money) and self.currency == other.currency:
             return self.value <= other.value
         return NotImplemented
 
-    def __iadd__(self: Money[C], other: Money[C]) -> Money[C]:
+    def __iadd__(self: Money[C_co], other: Money[C_co]) -> Money[C_co]:
         if isinstance(other, Money) and self.currency == other.currency:
             return Money(self.value + other.value, self.currency)
         return NotImplemented
 
-    def __add__(self: Money[C], other: Money[C]) -> Money[C]:
+    def __add__(self: Money[C_co], other: Money[C_co]) -> Money[C_co]:
         if isinstance(other, Money) and self.currency == other.currency:
             return Money(self.value + other.value, self.currency)
         return NotImplemented
 
-    def __sub__(self: Money[C], other: Money[C]) -> Money[C] | Overdraft[C]:
+    def __sub__(self: Money[C_co], other: Money[C_co]) -> Money[C_co] | Overdraft[C_co]:
         """
         >>> from immoney.currencies import SEK
         >>> SEK(2) - SEK(1)
@@ -193,22 +223,25 @@ class Money(Frozen, Generic[C], metaclass=InstanceCache):
             )
         return NotImplemented
 
-    def __pos__(self: MoneySelf) -> MoneySelf:
+    def __pos__(self) -> Self:
         return self
 
-    def __neg__(self: Money[C]) -> Overdraft[C]:
+    def __neg__(self: Money[C_co]) -> Overdraft[C_co]:
         return Overdraft(self)
 
     # TODO: Support precision-lossy multiplication with floats?
     @overload
-    def __mul__(self: Money[C], other: int) -> Money[C] | Overdraft[C]:
+    def __mul__(self: Money[C_co], other: int) -> Money[C_co] | Overdraft[C_co]:
         ...
 
     @overload
-    def __mul__(self: Money[C], other: Decimal) -> SubunitFraction[C]:
+    def __mul__(self: Money[C_co], other: Decimal) -> SubunitFraction[C_co]:
         ...
 
-    def __mul__(self, other: object) -> Money[C] | SubunitFraction[C] | Overdraft[C]:
+    def __mul__(
+        self,
+        other: object,
+    ) -> Money[C_co] | SubunitFraction[C_co] | Overdraft[C_co]:
         if isinstance(other, int):
             return (
                 Money(self.value * other, self.currency)
@@ -223,19 +256,20 @@ class Money(Frozen, Generic[C], metaclass=InstanceCache):
         return NotImplemented
 
     @overload
-    def __rmul__(self: Money[C], other: int) -> Money[C] | Overdraft[C]:
+    def __rmul__(self: Money[C_co], other: int) -> Money[C_co] | Overdraft[C_co]:
         ...
 
     @overload
-    def __rmul__(self: Money[C], other: Decimal) -> SubunitFraction[C]:
+    def __rmul__(self: Money[C_co], other: Decimal) -> SubunitFraction[C_co]:
         ...
 
     def __rmul__(
-        self: Money[C], other: int | Decimal
-    ) -> Money[C] | SubunitFraction[C] | Overdraft[C]:
+        self: Money[C_co],
+        other: int | Decimal,
+    ) -> Money[C_co] | SubunitFraction[C_co] | Overdraft[C_co]:
         return self.__mul__(other)
 
-    def __truediv__(self: Money[C], other: object) -> tuple[Money[C], ...]:
+    def __truediv__(self: Money[C_co], other: object) -> tuple[Money[C_co], ...]:
         """
         Divides the original value over the numerator and returns a tuple of new
         Money instances where the original value is spread as evenly as possible. The
@@ -267,21 +301,21 @@ class Money(Frozen, Generic[C], metaclass=InstanceCache):
         )
 
     @overload
-    def __floordiv__(self, other: int) -> SubunitFraction[C]:
+    def __floordiv__(self, other: int) -> SubunitFraction[C_co]:
         ...
 
     @overload
-    def __floordiv__(self, other: Fraction) -> SubunitFraction[C]:
+    def __floordiv__(self, other: Fraction) -> SubunitFraction[C_co]:
         ...
 
-    def __floordiv__(self, other: object) -> SubunitFraction[C]:
+    def __floordiv__(self, other: object) -> SubunitFraction[C_co]:
         if not isinstance(other, (int, Fraction)):
             return NotImplemented
         if other == 0:
             raise DivisionByZero
         return SubunitFraction.from_money(self, other)
 
-    def __abs__(self: MoneySelf) -> MoneySelf:
+    def __abs__(self) -> Self:
         return self
 
     def as_subunit(self) -> int:
@@ -289,15 +323,34 @@ class Money(Frozen, Generic[C], metaclass=InstanceCache):
 
     @classmethod
     # This needs HKT to allow typing to work properly for subclasses of Money.
-    def from_subunit(cls, value: int, currency: C) -> Money[C]:
-        return cls(Decimal(value) / currency.subunit, currency)
+    def from_subunit(cls, value: int, currency: C_inv) -> Money[C_inv]:
+        return cls(  # type: ignore[return-value]
+            Decimal(value) / currency.subunit,
+            currency,  # type: ignore[arg-type]
+        )
 
     @classmethod
     # This needs HKT to allow typing to work properly for subclasses of Money.
-    def floored(cls, value: Decimal, currency: C) -> Money[C]:
-        return cls(
+    def floored(cls, value: Decimal, currency: C_inv) -> Money[C_inv]:
+        return cls(  # type: ignore[return-value]
             value.quantize(currency.decimal_exponent, rounding=ROUND_DOWN),
-            currency,
+            currency,  # type: ignore[arg-type]
+        )
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: type,
+        *args: object,
+        **kwargs: object,
+    ) -> CoreSchema:
+        from ._pydantic import MoneyAdapter
+        from ._pydantic import build_generic_currency_schema
+
+        return build_generic_currency_schema(
+            cls=cls,
+            source_type=source_type,
+            adapter=MoneyAdapter,
         )
 
 
@@ -316,15 +369,19 @@ class Round(enum.Enum):
 
 
 @final
-class SubunitFraction(Frozen, Generic[C], metaclass=InstanceCache):
+class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
     __slots__ = ("value", "currency")
 
-    def __init__(self, value: Fraction | Decimal | int, currency: C) -> None:
+    def __init__(self, value: Fraction | Decimal | int, currency: C_co) -> None:
         self.value: Final = Fraction(value)
         self.currency: Final = currency
 
     @classmethod
-    def _normalize(cls, value: Fraction | Decimal, currency: C) -> tuple[Fraction, C]:
+    def _normalize(
+        cls,
+        value: Fraction | Decimal,
+        currency: C_inv,
+    ) -> tuple[Fraction, C_inv]:
         if not isinstance(currency, Currency):
             raise TypeError(
                 f"Argument 'currency' of {cls.__qualname__!r} must be a Currency, "
@@ -350,14 +407,14 @@ class SubunitFraction(Frozen, Generic[C], metaclass=InstanceCache):
     @classmethod
     def from_money(
         cls,
-        money: Money[C],
+        money: Money[C_co],
         denominator: int | Fraction = 1,
-    ) -> SubunitFraction[C]:
+    ) -> SubunitFraction[C_co]:
         return SubunitFraction(
             Fraction(money.as_subunit(), denominator), money.currency
         )
 
-    def round_money(self, rounding: Round) -> Money[C]:
+    def round_money(self, rounding: Round) -> Money[C_co]:
         main_unit = Decimal(float(self.value / self.currency.subunit))
         quantized = main_unit.quantize(
             exp=self.currency.decimal_exponent,
@@ -365,16 +422,32 @@ class SubunitFraction(Frozen, Generic[C], metaclass=InstanceCache):
         )
         return Money(quantized, self.currency)
 
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: type,
+        *args: object,
+        **kwargs: object,
+    ) -> CoreSchema:
+        from ._pydantic import SubunitFractionAdapter
+        from ._pydantic import build_generic_currency_schema
+
+        return build_generic_currency_schema(
+            cls=cls,
+            source_type=source_type,
+            adapter=SubunitFractionAdapter,
+        )
+
 
 @final
-class Overdraft(Frozen, Generic[C], metaclass=InstanceCache):
+class Overdraft(Frozen, Generic[C_co], metaclass=InstanceCache):
     __slots__ = ("money",)
 
-    def __init__(self, money: Money[C]) -> None:
+    def __init__(self, money: Money[C_co]) -> None:
         self.money: Final = money
 
     @classmethod
-    def _normalize(cls, money: Money[C]) -> tuple[Money[C]]:
+    def _normalize(cls, money: Money[C_co]) -> tuple[Money[C_co]]:
         if not isinstance(money, Money):
             raise TypeError(
                 f"Argument 'money' of {cls.__qualname__!r} must be a Money instance, "
@@ -399,32 +472,41 @@ class Overdraft(Frozen, Generic[C], metaclass=InstanceCache):
         return NotImplemented
 
     @overload
-    def __add__(self: Overdraft[C], other: Money[C]) -> Money[C] | Overdraft[C]:
+    def __add__(
+        self: Overdraft[C_co],
+        other: Money[C_co],
+    ) -> Money[C_co] | Overdraft[C_co]:
         ...
 
     @overload
-    def __add__(self: Overdraft[C], other: Overdraft[C]) -> Overdraft[C]:
+    def __add__(self: Overdraft[C_co], other: Overdraft[C_co]) -> Overdraft[C_co]:
         ...
 
-    def __add__(self: Overdraft[C], other: object) -> Money[C] | Overdraft[C]:
+    def __add__(self: Overdraft[C_co], other: object) -> Money[C_co] | Overdraft[C_co]:
         if isinstance(other, Money):
             return other - self.money
         if isinstance(other, Overdraft):
             return Overdraft(self.money + other.money)
         return NotImplemented
 
-    def __radd__(self: Overdraft[C], other: Money[C]) -> Money[C] | Overdraft[C]:
+    def __radd__(
+        self: Overdraft[C_co],
+        other: Money[C_co],
+    ) -> Money[C_co] | Overdraft[C_co]:
         return self.__add__(other)
 
     @overload
-    def __sub__(self: Overdraft[C], other: Money[C]) -> Overdraft[C]:
+    def __sub__(self: Overdraft[C_co], other: Money[C_co]) -> Overdraft[C_co]:
         ...
 
     @overload
-    def __sub__(self: Overdraft[C], other: Overdraft[C]) -> Money[C] | Overdraft[C]:
+    def __sub__(
+        self: Overdraft[C_co],
+        other: Overdraft[C_co],
+    ) -> Money[C_co] | Overdraft[C_co]:
         ...
 
-    def __sub__(self: Overdraft[C], other: object) -> Money[C] | Overdraft[C]:
+    def __sub__(self: Overdraft[C_co], other: object) -> Money[C_co] | Overdraft[C_co]:
         match other:
             case Money(currency=self.money.currency) as other:
                 return Overdraft(self.money + other)
@@ -432,17 +514,33 @@ class Overdraft(Frozen, Generic[C], metaclass=InstanceCache):
                 return other.money - self.money
         return NotImplemented
 
-    def __rsub__(self: Overdraft[C], other: Money[C]) -> Money[C]:
+    def __rsub__(self: Overdraft[C_co], other: Money[C_co]) -> Money[C_co]:
         match other:
             case Money(currency=self.money.currency) as other:
                 return self.money + other
         return NotImplemented
 
-    def __abs__(self: Overdraft[C]) -> Money[C]:
+    def __abs__(self: Overdraft[C_co]) -> Money[C_co]:
         return self.money
 
-    def __neg__(self: Overdraft[C]) -> Money[C]:
+    def __neg__(self: Overdraft[C_co]) -> Money[C_co]:
         return self.money
 
-    def __pos__(self: Overdraft[C]) -> Overdraft[C]:
+    def __pos__(self: Overdraft[C_co]) -> Overdraft[C_co]:
         return self
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: type,
+        *args: object,
+        **kwargs: object,
+    ) -> CoreSchema:
+        from ._pydantic import OverdraftAdapter
+        from ._pydantic import build_generic_currency_schema
+
+        return build_generic_currency_schema(
+            cls=cls,
+            source_type=source_type,
+            adapter=OverdraftAdapter,
+        )

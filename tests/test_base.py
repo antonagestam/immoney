@@ -128,14 +128,18 @@ class TestCurrency:
     @given(
         currency=currencies(),
         value=decimals(
-            min_value=very_small_decimal, allow_nan=False, allow_infinity=False
+            min_value=very_small_decimal,
+            allow_nan=False,
+            allow_infinity=False,
         ),
     )
     @example(currency=SEK, value=Decimal("0.01"))
     def test_normalize_value_raises_for_precision_loss(
-        self, currency: Currency, value: Decimal
+        self,
+        currency: Currency,
+        value: Decimal,
     ):
-        with pytest.raises(MoneyParseError):
+        with pytest.raises((MoneyParseError, InvalidOperation)):
             currency.normalize_value(value)
             currency.normalize_value(value + very_small_decimal)
 

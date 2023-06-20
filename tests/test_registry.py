@@ -7,7 +7,7 @@ from immoney import Currency
 from immoney import currencies
 from immoney.registry import CurrencyCollector
 
-collector: Final = CurrencyCollector()
+collector: Final = CurrencyCollector[Currency]()
 
 
 @final
