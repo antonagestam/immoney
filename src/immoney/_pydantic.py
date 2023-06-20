@@ -354,8 +354,7 @@ def build_currency_schema(
         if isinstance(value, str):
             return registry[value]
         # We ignore coverage here as this is enforced by schema.
-        # pragma: no cover
-        raise TypeError("Invalid type for Currency field.")
+        raise TypeError("Invalid type for Currency field.")  # pragma: no cover
 
     return or_is_instance(
         cls=cls,
