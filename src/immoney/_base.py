@@ -382,7 +382,7 @@ class Round(enum.Enum):
 class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
     __slots__ = ("value", "currency")
 
-    def __init__(self, value: Fraction | Decimal | int, currency: C_co) -> None:
+    def __init__(self, value: Fraction | Decimal | int, currency: C_co, /) -> None:
         self.value: Final = Fraction(value)
         self.currency: Final = currency
 
