@@ -93,6 +93,7 @@ class TestDefaultCurrencyModel:
                 "currency": {
                     "enum": sorted_items_equal(default_registry.keys()),
                     "title": "Currency",
+                    "type": "string",
                 },
             },
             "required": ["currency"],
@@ -159,6 +160,7 @@ class TestCustomCurrencyModel:
                 "currency": {
                     "enum": sorted_items_equal(["MCN", "JCN"]),
                     "title": "Currency",
+                    "type": "string",
                 },
             },
             "required": ["currency"],
@@ -215,6 +217,7 @@ class TestMoneyModel:
                         "currency": {
                             "enum": sorted_items_equal(default_registry.keys()),
                             "title": "Currency",
+                            "type": "string",
                         },
                         "subunits": {
                             "exclusiveMinimum": 0,
@@ -346,6 +349,7 @@ class TestCustomMoneyModel:
                         "currency": {
                             "enum": sorted_items_equal(("JCN", "MCN")),
                             "title": "Currency",
+                            "type": "string",
                         },
                         "subunits": {
                             "exclusiveMinimum": 0,
@@ -430,6 +434,7 @@ class TestFractionModel:
                         "currency": {
                             "enum": sorted_items_equal(default_registry.keys()),
                             "title": "Currency",
+                            "type": "string",
                         },
                         "numerator": {
                             "title": "Numerator",
@@ -514,6 +519,7 @@ class TestCustomFractionModel:
                         "currency": {
                             "enum": sorted_items_equal(("MCN", "JCN")),
                             "title": "Currency",
+                            "type": "string",
                         },
                         "numerator": {
                             "title": "Numerator",
@@ -667,6 +673,7 @@ class TestDefaultOverdraftModel:
                         "currency": {
                             "enum": sorted_items_equal(default_registry.keys()),
                             "title": "Currency",
+                            "type": "string",
                         },
                         "overdraft_subunits": {
                             "title": "Overdraft Subunits",
@@ -736,6 +743,7 @@ class TestCustomOverdraftModel:
                         "currency": {
                             "enum": sorted_items_equal(["JCN", "MCN"]),
                             "title": "Currency",
+                            "type": "string",
                         },
                         "overdraft_subunits": {
                             "title": "Overdraft Subunits",
