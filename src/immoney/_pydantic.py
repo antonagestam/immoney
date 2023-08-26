@@ -254,7 +254,7 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
             wrapped=core_schema.typed_dict_schema(
                 {
                     "overdraft_subunits": core_schema.typed_dict_field(
-                        core_schema.int_schema(gt=0),
+                        core_schema.int_schema(ge=0),
                         required=True,
                     ),
                     "currency": core_schema.typed_dict_field(
