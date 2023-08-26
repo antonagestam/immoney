@@ -223,3 +223,40 @@ Pydantic model fields.
   }
 }
 ```
+
+### Developing
+
+It's a good idea to use virtualenvs for development. I recommend using a combination of
+[pyenv] and [pyenv-virtualenv] for installing Python versions and managing virtualenvs.
+Using the lowest supported version for development is recommended, as of writing this is
+Python 3.10.
+
+[pyenv]: https://github.com/pyenv/pyenv
+[pyenv-virtualenv]: https://github.com/pyenv/pyenv-virtualenv
+
+To install development requirements, run the following with your virtualenv activated.
+
+```shell
+$ python3 -m pip install .[pydantic,test]
+```
+
+Now, to run the test suite, execute the following.
+
+```shell
+$ pytest
+```
+
+Static analysis and formatting is configured with [pre-commit].
+
+[pre-commit]: https://pre-commit.com/
+
+```shell
+# configure hooks to run when pushing
+$ pre-commit install -t pre-push
+# or on every commit, if you prefer
+$ pre-commit install -t pre-commit
+# run all checks
+$ pre-commit run --all-files
+# or just a single hook
+$ pre-commit run mypy --all-files
+```
