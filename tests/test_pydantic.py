@@ -175,17 +175,44 @@ class MoneyModel(BaseModel):
 
 
 class TestMoneyModel:
-    def test_can_roundtrip_valid_data(self) -> None:
+    @pytest.mark.parametrize(
+        ("subunits", "currency_code", "expected"),
+        (
+            (4990, "USD", USD("49.90")),
+            (4990, "EUR", EUR("49.90")),
+            (0, "NOK", NOK(0)),
+        ),
+    )
+    def test_can_roundtrip_valid_data(
+        self,
+        subunits: int,
+        currency_code: str,
+        expected: Money[Currency],
+    ) -> None:
         data = {
             "money": {
-                "subunits": 4990,
-                "currency": "USD",
+                "subunits": subunits,
+                "currency": currency_code,
             }
         }
 
         instance = MoneyModel.model_validate(data)
-        assert instance.money == USD("49.90")
+        assert instance.money == expected
         assert json.loads(instance.model_dump_json()) == data
+
+    def test_parsing_raises_validation_error_for_negative_value(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=r"Input should be greater than or equal to 0",
+        ):
+            MoneyModel.model_validate(
+                {
+                    "money": {
+                        "currency": "EUR",
+                        "subunits": -1,
+                    },
+                }
+            )
 
     def test_parsing_raises_validation_error_for_invalid_currency(self) -> None:
         with pytest.raises(
@@ -220,7 +247,7 @@ class TestMoneyModel:
                             "type": "string",
                         },
                         "subunits": {
-                            "exclusiveMinimum": 0,
+                            "minimum": 0,
                             "title": "Subunits",
                             "type": "integer",
                         },
@@ -284,7 +311,7 @@ class TestSpecializedMoneyModel:
                             "title": "Currency",
                         },
                         "subunits": {
-                            "exclusiveMinimum": 0,
+                            "minimum": 0,
                             "title": "Subunits",
                             "type": "integer",
                         },
@@ -352,7 +379,7 @@ class TestCustomMoneyModel:
                             "type": "string",
                         },
                         "subunits": {
-                            "exclusiveMinimum": 0,
+                            "minimum": 0,
                             "title": "Subunits",
                             "type": "integer",
                         },
@@ -629,17 +656,48 @@ class DefaultOverdraftModel(BaseModel):
 
 
 class TestDefaultOverdraftModel:
-    def test_can_roundtrip_valid_data(self) -> None:
+    @pytest.mark.parametrize(
+        ("subunits", "currency_code", "expected"),
+        (
+            (4990, "USD", USD.overdraft("49.90")),
+            (4990, "EUR", EUR.overdraft("49.90")),
+            (1, "NOK", NOK.overdraft("0.01")),
+        ),
+    )
+    def test_can_roundtrip_valid_data(
+        self,
+        subunits: int,
+        currency_code: str,
+        expected: Overdraft[Currency],
+    ) -> None:
         data = {
             "overdraft": {
-                "overdraft_subunits": 89999,
-                "currency": "CUP",
+                "overdraft_subunits": subunits,
+                "currency": currency_code,
             }
         }
 
         instance = DefaultOverdraftModel.model_validate(data)
-        assert instance.overdraft == CUP.overdraft("899.99")
+        assert instance.overdraft == expected
         assert json.loads(instance.model_dump_json()) == data
+
+    @pytest.mark.parametrize("value", (0, -1, -1024))
+    def test_parsing_raises_validation_error_for_non_positive_value(
+        self,
+        value: int,
+    ) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=r"Input should be greater than 0",
+        ):
+            DefaultOverdraftModel.model_validate(
+                {
+                    "overdraft": {
+                        "currency": "EUR",
+                        "overdraft_subunits": value,
+                    },
+                }
+            )
 
     def test_parsing_raises_validation_error_for_invalid_currency(self) -> None:
         with pytest.raises(

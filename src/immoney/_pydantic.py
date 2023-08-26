@@ -54,8 +54,8 @@ def or_is_instance(
 ) -> core_schema.UnionSchema:
     return core_schema.union_schema(
         choices=[
-            core_schema.is_instance_schema(cls=cls),
             wrapped,
+            core_schema.is_instance_schema(cls=cls),
         ],
         serialization=serialization,
     )
@@ -110,7 +110,7 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
             wrapped=core_schema.typed_dict_schema(
                 {
                     "subunits": core_schema.typed_dict_field(
-                        core_schema.int_schema(gt=0),
+                        core_schema.int_schema(ge=0),
                         required=True,
                     ),
                     "currency": core_schema.typed_dict_field(
