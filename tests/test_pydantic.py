@@ -681,14 +681,14 @@ class TestDefaultOverdraftModel:
         assert instance.overdraft == expected
         assert json.loads(instance.model_dump_json()) == data
 
-    @pytest.mark.parametrize("value", (-1, -1024))
-    def test_parsing_raises_validation_error_for_negative_value(
+    @pytest.mark.parametrize("value", (0, -1, -1024))
+    def test_parsing_raises_validation_error_for_non_positive_value(
         self,
         value: int,
     ) -> None:
         with pytest.raises(
             ValidationError,
-            match=r"Input should be greater than or equal to 0",
+            match=r"Input should be greater than 0",
         ):
             DefaultOverdraftModel.model_validate(
                 {
@@ -736,7 +736,7 @@ class TestDefaultOverdraftModel:
                         "overdraft_subunits": {
                             "title": "Overdraft Subunits",
                             "type": "integer",
-                            "minimum": 0,
+                            "exclusiveMinimum": 0,
                         },
                     },
                     "required": sorted_items_equal(["overdraft_subunits", "currency"]),
@@ -767,7 +767,7 @@ class TestCustomOverdraftModel:
         assert instance.overdraft == MCN.overdraft("89.999")
         assert json.loads(instance.model_dump_json()) == data
         assert_type(instance.overdraft, Overdraft[CustomCurrency])
-        assert_type(instance.overdraft.money.currency, CustomCurrency)
+        assert_type(instance.overdraft.currency, CustomCurrency)
 
     def test_parsing_raises_validation_error_for_invalid_currency(self) -> None:
         data = {
@@ -806,7 +806,7 @@ class TestCustomOverdraftModel:
                         "overdraft_subunits": {
                             "title": "Overdraft Subunits",
                             "type": "integer",
-                            "minimum": 0,
+                            "exclusiveMinimum": 0,
                         },
                     },
                     "required": sorted_items_equal(["overdraft_subunits", "currency"]),
@@ -837,7 +837,7 @@ class TestSpecializedOverdraftModel:
         assert instance.overdraft == CUP.overdraft("899.99")
         assert json.loads(instance.model_dump_json()) == data
         assert_type(instance.overdraft, Overdraft[CUPType])
-        assert_type(instance.overdraft.money.currency, CUPType)
+        assert_type(instance.overdraft.currency, CUPType)
 
     def test_parsing_raises_validation_error_for_invalid_currency(self) -> None:
         data = {
@@ -872,7 +872,7 @@ class TestSpecializedOverdraftModel:
                         "overdraft_subunits": {
                             "title": "Overdraft Subunits",
                             "type": "integer",
-                            "minimum": 0,
+                            "exclusiveMinimum": 0,
                         },
                     },
                     "required": sorted_items_equal(["overdraft_subunits", "currency"]),
