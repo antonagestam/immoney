@@ -3,12 +3,15 @@ from __future__ import annotations
 from typing import Final
 
 from hypothesis.strategies import decimals
+from hypothesis.strategies import integers
 
-max_valid_sek: Final = 10_000_000_000_000_000_000_000_000 - 1
-valid_sek: Final = decimals(
+valid_sek_decimals: Final = decimals(
     min_value=0,
-    max_value=max_valid_sek,
+    max_value=10_000_000_000_000_000_000_000_000 - 1,
     places=2,
     allow_nan=False,
     allow_infinity=False,
 )
+
+valid_money_subunits: Final = integers(min_value=0)
+valid_overdraft_subunits: Final = integers(min_value=1)
