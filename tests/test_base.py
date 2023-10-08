@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 from abcattrs import UndefinedAbstractAttribute
+from hypothesis import assume
 from hypothesis import example
 from hypothesis import given
 from hypothesis.strategies import composite
@@ -20,23 +21,20 @@ from immoney import Money
 from immoney import Overdraft
 from immoney import Round
 from immoney import SubunitFraction
+from immoney._base import ParsableMoneyValue
 from immoney._base import valid_subunit
 from immoney.currencies import NOK
 from immoney.currencies import SEK
 from immoney.currencies import SEKType
 from immoney.errors import DivisionByZero
 from immoney.errors import FrozenInstanceError
+from immoney.errors import InvalidOverdraftValue
 from immoney.errors import InvalidSubunit
-from immoney.errors import MoneyParseError
+from immoney.errors import ParseError
 
-max_valid_sek = 10_000_000_000_000_000_000_000_000 - 1
-valid_sek = decimals(
-    min_value=0,
-    max_value=max_valid_sek,
-    places=2,
-    allow_nan=False,
-    allow_infinity=False,
-)
+from .strategies import max_valid_sek
+from .strategies import valid_sek
+
 very_small_decimal = Decimal("0.0000000000000000000000000001")
 
 
@@ -55,6 +53,26 @@ def sums_to_valid_sek(
             allow_infinity=False,
         )
     )
+
+
+@composite
+def non_zero_sums_to_valid_sek(
+    draw,
+    first_pick=valid_sek,
+):
+    a = draw(first_pick)
+    assume(a != 0)
+    b = draw(
+        decimals(
+            min_value=0,
+            max_value=max_valid_sek - a,
+            places=2,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+    assume(b != 0)
+    return a, b
 
 
 @composite
@@ -139,7 +157,7 @@ class TestCurrency:
         currency: Currency,
         value: Decimal,
     ) -> None:
-        with pytest.raises((MoneyParseError, InvalidOperation)):
+        with pytest.raises((ParseError, InvalidOperation)):
             currency.normalize_value(value)
             currency.normalize_value(value + very_small_decimal)
 
@@ -147,20 +165,32 @@ class TestCurrency:
         value=integers(max_value=-1) | decimals(max_value=Decimal("-0.000001")),
     )
     def test_normalize_value_raises_for_negative_value(self, value: object) -> None:
-        with pytest.raises(MoneyParseError):
+        with pytest.raises(ParseError):
             SEK.normalize_value(value)  # type: ignore[arg-type]
 
     def test_normalize_value_raises_for_invalid_str(self) -> None:
-        with pytest.raises(MoneyParseError):
+        with pytest.raises(ParseError):
             SEK.normalize_value("foo")
 
     def test_normalize_value_raises_for_nan(self) -> None:
-        with pytest.raises(MoneyParseError):
+        with pytest.raises(ParseError):
             SEK.normalize_value(Decimal("nan"))
 
     def test_normalize_value_raises_for_non_finite(self) -> None:
-        with pytest.raises(MoneyParseError):
+        with pytest.raises(ParseError):
             SEK.normalize_value(float("inf"))  # type: ignore[arg-type]
+
+    def test_from_subunit_returns_money_instance(self) -> None:
+        instance = SEK.from_subunit(100)
+        assert isinstance(instance, Money)
+        assert instance.value == Decimal("1.00")
+        assert instance.currency is SEK
+
+    def test_overdraft_from_subunit_returns_overdraft_instance(self) -> None:
+        instance = SEK.overdraft_from_subunit(100)
+        assert isinstance(instance, Overdraft)
+        assert instance.value == Decimal("1.00")
+        assert instance.currency is SEK
 
 
 valid_values = decimals(
@@ -176,10 +206,24 @@ def monies(
     draw,
     currencies=currencies(),
     values=valid_values,
-):
-    return SubunitFraction(Fraction(draw(values)), draw(currencies)).round_money(
-        Round.DOWN
-    )
+) -> Money[Currency]:
+    fraction = SubunitFraction(Fraction(draw(values)), draw(currencies))
+    return fraction.round_money(Round.DOWN)
+
+
+@composite
+def overdrafts(
+    draw,
+    currencies=currencies(),
+    values=valid_values,
+) -> Overdraft[Currency]:
+    value = draw(values)
+    fraction = SubunitFraction(Fraction(-value), draw(currencies))
+    try:
+        return fraction.round_overdraft(Round.DOWN)
+    except InvalidOverdraftValue:
+        assume(False)
+        raise NotImplementedError
 
 
 class TestMoney:
@@ -197,7 +241,7 @@ class TestMoney:
         assert SEK(1) is SEK(1)
 
     def test_cannot_instantiate_subunit_fraction(self):
-        with pytest.raises(MoneyParseError):
+        with pytest.raises(ParseError):
             SEK(Decimal("1.001"))
 
     def test_raises_type_error_when_instantiated_with_non_currency(self):
@@ -256,7 +300,7 @@ class TestMoney:
     def test_can_check_equality_with_instance(self, value: Decimal):
         instance = SEK(value)
         assert instance == SEK(value)
-        next_plus = SEK.from_subunit(instance.as_subunit() + 1)
+        next_plus = SEK.from_subunit(instance.subunits + 1)
         assert next_plus != value
         assert value != next_plus
 
@@ -363,9 +407,14 @@ class TestMoney:
     def test_abs_returns_self(self, value: Money[Any]):
         assert value is abs(value)
 
-    @given(monies())
-    def test_neg_returns_overdraft(self, value: Money[Any]):
-        assert -value is Overdraft(value)
+    @given(overdrafts())
+    def test_neg_returns_overdraft(self, overdraft: Overdraft[Any]):
+        value = Money(overdraft.value, overdraft.currency)
+        assert -value is overdraft
+
+    def test_neg_zero_returns_self(self):
+        value = SEK(0)
+        assert -value is value
 
     @given(sums_to_valid_sek())
     @example((Decimal(0), Decimal(0)))
@@ -386,7 +435,7 @@ class TestMoney:
 
         neg = b - a
         assert isinstance(neg, Overdraft)
-        assert neg.money.value == expected_sum
+        assert neg.value == expected_sum
 
     @given(a=monies(), b=monies())
     @example(NOK(0), SEK(0))
@@ -403,10 +452,13 @@ class TestMoney:
 
     @given(monies())
     def test_neg(self, a: Money[Any]):
+        assume(a.value != 0)
         negged = -a
         assert isinstance(negged, Overdraft)
-        assert negged.money == a
-        assert +a == a
+        assert negged.value == a.value
+        assert negged.currency == a.currency
+        assert -negged is a
+        assert +a is a
 
     @given(monies(), integers(min_value=0))
     def test_returns_instance_when_multiplied_with_positive_integer(
@@ -434,6 +486,8 @@ class TestMoney:
         a: Money[Any],
         b: int,
     ):
+        assume(a.value != 0)
+
         expected_product = -a.value * b
         try:
             product = a * b
@@ -441,12 +495,24 @@ class TestMoney:
             assert expected_product * a.currency.subunit > max_valid_sek
             return
         assert isinstance(product, Overdraft)
-        assert product.money.currency is a.currency
-        assert product.money.value == expected_product
+        assert product.currency is a.currency
+        assert product.value == expected_product
         reverse_applied = b * a
         assert isinstance(reverse_applied, Overdraft)
-        assert reverse_applied.money.currency is a.currency
-        assert reverse_applied.money.value == expected_product
+        assert reverse_applied.currency is a.currency
+        assert reverse_applied.value == expected_product
+
+    @given(integers(), currencies())
+    def test_multiplying_with_zero_returns_money_zero(self, a: int, currency: Currency):
+        zero = currency(0)
+        result = a * zero
+
+        assert isinstance(result, Money)
+        assert result.value == 0
+        assert result.currency == currency
+
+        # Test commutative property.
+        assert zero * a == result
 
     @given(monies(), decimals(allow_infinity=False, allow_nan=False))
     def test_returns_subunit_fraction_when_multiplied_with_decimal(
@@ -525,7 +591,7 @@ class TestMoney:
         quotient = dividend // divisor
 
         assert isinstance(quotient, SubunitFraction)
-        assert quotient.value == Fraction(dividend.as_subunit(), divisor)
+        assert quotient.value == Fraction(dividend.subunits, divisor)
         assert quotient.currency == dividend.currency
 
     @given(monies())
@@ -544,10 +610,10 @@ class TestMoney:
         Foo = FooType()
 
         one_subunit = Foo("0.0001")
-        assert one_subunit.as_subunit() == 1
+        assert one_subunit.subunits == 1
 
         one_main_unit = Foo(1)
-        assert one_main_unit.as_subunit() == Foo.subunit
+        assert one_main_unit.subunits == Foo.subunit
 
     def test_from_subunit_returns_instance(self):
         class FooType(Currency):
@@ -564,7 +630,7 @@ class TestMoney:
 
     @given(currencies(), integers(max_value=max_valid_sek, min_value=0))
     def test_subunit_roundtrip(self, currency: Currency, value: int):
-        assert value == Money.from_subunit(value, currency).as_subunit()
+        assert value == Money.from_subunit(value, currency).subunits
 
     def test_floored_returns_closest_currency_value(self):
         assert Money.floored(Decimal("0.001"), SEK) == SEK(0)
@@ -574,7 +640,7 @@ class TestMoney:
         assert Money.floored(Decimal("-0.001"), SEK) == SEK(0)
 
     def test_floored_raises_for_invalid_value(self):
-        with pytest.raises(MoneyParseError):
+        with pytest.raises(ParseError):
             Money.floored(Decimal("-0.0101"), SEK)
 
 
@@ -685,22 +751,87 @@ class TestSubunitFraction:
         assert SEK("3.32") == fraction.round_money(Round.HALF_DOWN)
         assert SEK("3.32") == fraction.round_money(Round.ZERO_FIVE_UP)
 
-    def test_round_money_raises__shoosh__for_negative_fraction(self):
-        with pytest.raises(MoneyParseError):
+    def test_round_money_raises_parser_error_for_negative_fraction(self):
+        with pytest.raises(ParseError):
             SubunitFraction(-1, SEK).round_money(Round.DOWN)
 
-        with pytest.raises(MoneyParseError):
+        with pytest.raises(ParseError):
             SubunitFraction(-100, NOK).round_money(Round.DOWN)
+
+    def test_round_overdraft_returns_overdraft(self):
+        fraction = SubunitFraction(Fraction(-997, 3), SEK)
+        assert SEK.overdraft("3.32") == fraction.round_overdraft(Round.DOWN)
+        assert SEK.overdraft("3.33") == fraction.round_overdraft(Round.UP)
+        assert SEK.overdraft("3.32") == fraction.round_overdraft(Round.HALF_UP)
+        assert SEK.overdraft("3.32") == fraction.round_overdraft(Round.HALF_EVEN)
+        assert SEK.overdraft("3.32") == fraction.round_overdraft(Round.HALF_DOWN)
+        assert SEK.overdraft("3.32") == fraction.round_overdraft(Round.ZERO_FIVE_UP)
+
+    def test_round_overdraft_raises_parse_error_for_positive_fraction(self):
+        with pytest.raises(ParseError):
+            SubunitFraction(1, SEK).round_overdraft(Round.DOWN)
+
+    def test_round_either_returns_overdraft_for_negative_fraction(self):
+        fraction = SubunitFraction(Fraction(-997, 3), SEK)
+        assert SEK.overdraft("3.32") == fraction.round_either(Round.DOWN)
+        assert SEK.overdraft("3.33") == fraction.round_either(Round.UP)
+        assert SEK.overdraft("3.32") == fraction.round_either(Round.HALF_UP)
+        assert SEK.overdraft("3.32") == fraction.round_either(Round.HALF_EVEN)
+        assert SEK.overdraft("3.32") == fraction.round_either(Round.HALF_DOWN)
+        assert SEK.overdraft("3.32") == fraction.round_either(Round.ZERO_FIVE_UP)
+
+    def test_round_either_returns_money_for_positive_fraction(self):
+        fraction = SubunitFraction(Fraction(997, 3), SEK)
+        assert SEK("3.32") == fraction.round_either(Round.DOWN)
+        assert SEK("3.33") == fraction.round_either(Round.UP)
+        assert SEK("3.32") == fraction.round_either(Round.HALF_UP)
+        assert SEK("3.32") == fraction.round_either(Round.HALF_EVEN)
+        assert SEK("3.32") == fraction.round_either(Round.HALF_DOWN)
+        assert SEK("3.32") == fraction.round_either(Round.ZERO_FIVE_UP)
 
 
 class TestOverdraft:
-    @pytest.mark.parametrize(
-        "value",
-        (object(), "foo", 123, 123.25, Decimal("123.25"), SubunitFraction(1, SEK)),
-    )
-    def test_init_raises_type_error_for_non_money_value(self, value: object):
+    @given(valid_sek)
+    @example(Decimal("1"))
+    @example(Decimal("1.01"))
+    @example(Decimal("1.010000"))
+    def test_instantiation_normalizes_value(self, value: Decimal):
+        assume(value != 0)
+        instantiated = SEK.overdraft(value)
+        assert instantiated.value == value
+        assert instantiated.value.as_tuple().exponent == -2
+
+    @pytest.mark.parametrize("value", (0, "0.00", Decimal(0), Decimal("0.0")))
+    def test_raises_type_error_for_value_zero(self, value: ParsableMoneyValue):
+        with pytest.raises(
+            InvalidOverdraftValue,
+            match=(
+                r"^Overdraft cannot be instantiated with a value of zero, the Money "
+                r"class should be used instead\.$"
+            ),
+        ):
+            SEK.overdraft(value)
+
+    def test_instantiation_caches_instance(self):
+        assert SEK.overdraft("1.01") is SEK.overdraft("1.010")
+        assert SEK.overdraft(1) is SEK.overdraft(1)
+
+    def test_cannot_instantiate_subunit_fraction(self):
+        with pytest.raises(ParseError):
+            SEK.overdraft(Decimal("1.001"))
+
+    def test_raises_type_error_when_instantiated_with_non_currency(self):
         with pytest.raises(TypeError):
-            Overdraft(value)  # type: ignore[arg-type]
+            Overdraft("2.00", "SEK")  # type: ignore[type-var]
+
+    @given(money=monies(), name=text(), value=valid_sek | text())
+    @example(SEK(23), "value", Decimal("123"))
+    @example(NOK(23), "currency", SEK)
+    def test_raises_on_assignment(self, money: Money[Any], name: str, value: object):
+        initial = getattr(money, name, None)
+        with pytest.raises(FrozenInstanceError):
+            setattr(money, name, value)
+        assert getattr(money, name, None) == initial
 
     @pytest.mark.parametrize(
         ("value", "expected"),
@@ -708,7 +839,7 @@ class TestOverdraft:
             (SEK.overdraft(Decimal("523.12")), "Overdraft('523.12', SEK)"),
             (SEK.overdraft(52), "Overdraft('52.00', SEK)"),
             (SEK.overdraft(Decimal("52.13")), "Overdraft('52.13', SEK)"),
-            (SEK.overdraft(0), "Overdraft('0.00', SEK)"),
+            (SEK.overdraft("0.01"), "Overdraft('0.01', SEK)"),
             (NOK.overdraft(8000), "Overdraft('8000.00', NOK)"),
         ),
     )
@@ -725,54 +856,61 @@ class TestOverdraft:
         assert {a, a, b} == {a, b, b}
         assert hash(SEK.overdraft(13)) == hash(SEK.overdraft(13))
 
-    @given(monies())
-    def test_abs_returns_money(self, value: Money[Any]):
-        assert value is abs(Overdraft(value))
+    @given(overdrafts())
+    def test_abs_returns_money(self, value: Overdraft[Any]):
+        assert abs(value) is Money(value.value, value.currency)
 
-    @given(monies())
-    def test_neg_returns_money(self, value: Money[Any]):
-        assert value is -Overdraft(value)
+    @given(overdrafts())
+    def test_neg_returns_money(self, value: Overdraft[Any]):
+        assert -value is Money(value.value, value.currency)
 
-    @given(monies())
-    def test_pos_returns_self(self, value: Money[Any]):
-        assert Overdraft(value) is +Overdraft(value)
+    @given(overdrafts())
+    def test_pos_returns_self(self, value: Overdraft[Any]):
+        assert value is +value
 
     def test_can_check_equality_with_zero(self):
-        assert SEK.overdraft(0) == 0
-        assert 0 == SEK.overdraft(0)
         assert SEK.overdraft("0.01") != 0
         assert 0 != SEK.overdraft("0.01")
-        assert NOK.overdraft(0) == 0
-        assert 0 == NOK.overdraft(0)
         assert NOK.overdraft("0.01") != 0
         assert 0 != NOK.overdraft("0.01")
 
-    @given(value=monies(), number=integers(min_value=1))
+    @given(value=overdrafts(), number=integers(min_value=1))
     @example(SEK(1), 1)
     @example(SEK("0.1"), 1)
     @example(SEK("0.01"), 1)
-    def test_cannot_check_equality_with_non_zero(self, value: Money[Any], number: int):
-        assert Overdraft(value) != number
+    def test_equality_with_non_zero_is_always_false(
+        self, value: Overdraft[Any], number: int
+    ):
+        assert value != number
 
-    @given(money_value=monies(), overdraft_value=monies())
-    @example(SEK(1), SEK(1))
-    def test_can_check_equality_with_money(
+    @given(money_value=monies(), overdraft_value=overdrafts())
+    @example(SEK(1), SEK.overdraft(1))
+    def test_equality_with_money_is_always_false(
         self,
         money_value: Money[Any],
-        overdraft_value: Money[Any],
+        overdraft_value: Overdraft[Any],
     ):
-        assert money_value != Overdraft(overdraft_value)
+        assert money_value != overdraft_value
+        assert overdraft_value != money_value
 
-    @given(sums_to_valid_sek())
-    @example((Decimal(0), Decimal(0)))
+    @given(non_zero_sums_to_valid_sek())
+    @example((Decimal("0.01"), Decimal("0.01")))
     def test_can_add_instances(self, xy: tuple[Decimal, Decimal]):
         x, y = xy
+
         a = SEK.overdraft(x)
         b = SEK.overdraft(y)
-        assert (b + a).money.value == (a + b).money.value == x + y
 
-    @given(sums_to_valid_sek())
-    @example((Decimal(0), Decimal(0)))
+        # Test commutative property.
+        c = b + a
+        assert isinstance(c, Overdraft)
+        d = a + b
+        assert isinstance(d, Overdraft)
+        assert c == d
+        assert c.value == d.value == x + y
+
+    @given(non_zero_sums_to_valid_sek())
+    @example((Decimal("0.01"), Decimal("0.01")))
     def test_adding_instances_of_different_currency_raises_type_error(
         self, xy: tuple[Decimal, Decimal]
     ):
@@ -785,9 +923,10 @@ class TestOverdraft:
             b + a  # type: ignore[operator]
 
     @given(sums_to_valid_sek())
-    @example((Decimal(0), Decimal(0)))
+    @example((Decimal("0.01"), Decimal(0)))
     def test_adding_money_equals_subtraction(self, xy: tuple[Decimal, Decimal]):
         x, y = xy
+        assume(x != 0)
         a = SEK.overdraft(x)
         b = SEK(y)
         assert abs(a + b).value == abs(b + a).value == abs(x - y)
@@ -804,16 +943,17 @@ class TestOverdraft:
         d = SEK.overdraft(1000)
         negative_sum = c + d
         assert isinstance(negative_sum, Overdraft)
-        assert negative_sum.money.value == Decimal("400")
+        assert negative_sum.value == Decimal("400")
         assert negative_sum == d + c
 
     @given(sums_to_valid_sek())
-    @example((Decimal(0), Decimal(0)))
+    @example((Decimal(0), Decimal("0.01")))
     def test_adding_money_of_different_currency_raises_type_error(
         self, xy: tuple[Decimal, Decimal]
     ):
         x, y = xy
         a = SEK(x)
+        assume(y != 0)
         b = NOK.overdraft(y)
         with pytest.raises(TypeError):
             a + b  # type: ignore[operator]
@@ -830,16 +970,16 @@ class TestOverdraft:
         with pytest.raises(TypeError):
             value + SEK.overdraft(1)  # type: ignore[operator]
 
-    @given(sums_to_valid_sek())
-    @example((Decimal(0), Decimal(0)))
+    @given(non_zero_sums_to_valid_sek())
+    @example((Decimal("0.01"), Decimal("0.01")))
     def test_can_subtract_instances(self, xy: tuple[Decimal, Decimal]):
         x, y = xy
         a = SEK.overdraft(x)
         b = SEK.overdraft(y)
         assert abs(b - a).value == abs(a - b).value == abs(x - y)
 
-    @given(sums_to_valid_sek())
-    @example((Decimal(0), Decimal(0)))
+    @given(non_zero_sums_to_valid_sek())
+    @example((Decimal("0.01"), Decimal("0.01")))
     def test_subtracting_instances_of_different_currency_raises_type_error(
         self, xy: tuple[Decimal, Decimal]
     ):
@@ -855,6 +995,7 @@ class TestOverdraft:
     @example((Decimal(0), Decimal(0)))
     def test_subtracting_money_equals_addition(self, xy: tuple[Decimal, Decimal]):
         x, y = xy
+        assume(x != 0)
         a = SEK.overdraft(x)
         b = SEK(y)
         assert abs(a - b).value == abs(b - a).value == abs(x + y)
@@ -883,6 +1024,7 @@ class TestOverdraft:
     ):
         x, y = xy
         a = SEK(x)
+        assume(y != 0)
         b = NOK.overdraft(y)
         with pytest.raises(TypeError):
             a - b  # type: ignore[operator]
