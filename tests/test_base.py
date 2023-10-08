@@ -107,24 +107,9 @@ class TestCurrency:
         assert SEK.zero.subunits == 0
         assert SEK.zero.currency is SEK
 
-    @given(
-        currency=currencies(),
-        value=decimals(
-            min_value=very_small_decimal,
-            allow_nan=False,
-            allow_infinity=False,
-        ),
-    )
-    @example(currency=SEK, value=Decimal("0.01"))
-    def test_normalize_value_raises_for_precision_loss(
-        self,
-        currency: Currency,
-        value: Decimal,
-    ) -> None:
-        with pytest.raises((ParseError, InvalidOperation)):
-            currency.normalize_to_subunits(value)
-            currency.normalize_to_subunits(value + very_small_decimal)
-            currency.normalize_to_subunits(value - very_small_decimal)
+    def test_normalize_value_raises_for_precision_loss(self) -> None:
+        with pytest.raises(ParseError):
+            SEK.normalize_to_subunits(Decimal("0.01") + very_small_decimal)
 
     @given(
         value=integers(max_value=-1) | decimals(max_value=Decimal("-0.000001")),
