@@ -124,6 +124,7 @@ class TestCurrency:
         with pytest.raises((ParseError, InvalidOperation)):
             currency.normalize_to_subunits(value)
             currency.normalize_to_subunits(value + very_small_decimal)
+            currency.normalize_to_subunits(value - very_small_decimal)
 
     @given(
         value=integers(max_value=-1) | decimals(max_value=Decimal("-0.000001")),
