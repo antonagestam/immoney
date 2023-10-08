@@ -1,3 +1,9 @@
+"""
+These tests originate from initial experimentation, and were useful to have as
+regression tests during early development. They have probably played out their role
+since then, and can be removed. Meaning that they are now duplicating other better
+written tests in the suite.
+"""
 from decimal import Decimal
 from fractions import Fraction
 
@@ -53,14 +59,14 @@ def test_subtraction():
     # When the result of subtraction exceeds zero, the resulting value is an instance of
     # Overdraft.
     overdraft = m - Money("100.01", SEK)
-    assert overdraft == Overdraft(Money(".01", SEK))
+    assert overdraft == Overdraft(".01", SEK)
 
     redeemed = overdraft + SEK("0.01")
     assert redeemed == SEK(0)
 
-    larger_overdraft = Overdraft(SEK(1000))
+    larger_overdraft = SEK.overdraft(1000)
     not_yet_redeemed = larger_overdraft + SEK(501)
-    assert not_yet_redeemed == Overdraft(SEK(499))
+    assert not_yet_redeemed == SEK.overdraft(499)
 
-    growing_overdraft = larger_overdraft + Overdraft(SEK(10000))
-    assert growing_overdraft == Overdraft(SEK(11000))
+    growing_overdraft = larger_overdraft + SEK.overdraft(10000)
+    assert growing_overdraft == SEK.overdraft(11000)

@@ -31,8 +31,9 @@ from typing_extensions import Self
 from ._cache import InstanceCache
 from ._frozen import Frozen
 from .errors import DivisionByZero
+from .errors import InvalidOverdraftValue
 from .errors import InvalidSubunit
-from .errors import MoneyParseError
+from .errors import ParseError
 
 if TYPE_CHECKING:
     from pydantic_core.core_schema import CoreSchema
@@ -66,11 +67,11 @@ class Currency(Frozen, abc.ABC):
     def __repr__(self) -> str:
         return f"Currency(code={self.code}, subunit={self.subunit})"
 
-    def __call__(self, value: Decimal | int | str) -> Money[Self]:
+    def __call__(self, value: ParsableMoneyValue) -> Money[Self]:
         return Money(value, self)
 
     def __hash__(self) -> int:
-        return hash((self.code, self.subunit))
+        return hash((type(self), self.code, self.subunit))
 
     @cached_property
     def decimal_exponent(self) -> Decimal:
@@ -86,21 +87,21 @@ class Currency(Frozen, abc.ABC):
             try:
                 value = Decimal(value)
             except decimal.InvalidOperation:
-                raise MoneyParseError("Failed parsing Decimal")
+                raise ParseError("Failed parsing Decimal")
 
         if value.is_nan():
-            raise MoneyParseError("Cannot parse from NaN")
+            raise ParseError("Cannot parse from NaN")
 
         if not value.is_finite():
-            raise MoneyParseError("Cannot parse from non-finite")
+            raise ParseError("Cannot parse from non-finite")
 
         if value < 0:
-            raise MoneyParseError("Cannot parse from negative value")
+            raise ParseError("Cannot parse from negative value")
 
         quantized = value.quantize(self.decimal_exponent)
 
         if value != quantized:
-            raise MoneyParseError(
+            raise ParseError(
                 f"Cannot interpret value as Money of currency {self.code} without loss "
                 f"of precision. Explicitly round the value or consider using "
                 f"SubunitFraction."
@@ -110,6 +111,9 @@ class Currency(Frozen, abc.ABC):
 
     def from_subunit(self, value: int) -> Money[Self]:
         return Money.from_subunit(value, self)
+
+    def overdraft_from_subunit(self, value: int) -> Overdraft[Self]:
+        return Overdraft.from_subunit(value, self)
 
     @cached_property
     def one_subunit(self) -> Money[Self]:
@@ -121,11 +125,8 @@ class Currency(Frozen, abc.ABC):
     ) -> SubunitFraction[Self]:
         return SubunitFraction(subunit_value, self)
 
-    def overdraft(
-        self: Self,
-        value: Decimal | int | str,
-    ) -> Overdraft[Self]:
-        return Overdraft(Money(value, self))
+    def overdraft(self: Self, value: ParsableMoneyValue) -> Overdraft[Self]:
+        return Overdraft(value, self)
 
     @classmethod
     def get_default_registry(cls) -> CurrencyRegistry[Currency]:
@@ -144,19 +145,46 @@ class Currency(Frozen, abc.ABC):
         return build_currency_schema(cls)
 
 
+def _validate_currency_arg(
+    cls: type,
+    value: object,
+    arg_name: str = "currency",
+) -> None:
+    if not isinstance(value, Currency):
+        raise TypeError(
+            f"Argument {arg_name!r} of {cls.__qualname__!r} must be a Currency, "
+            f"got object of type {type(value)!r}"
+        )
+
+
+def _dispatch_type(value: Decimal, currency: C_inv) -> Money[C_inv] | Overdraft[C_inv]:
+    return Money(value, currency) if value >= 0 else Overdraft(-value, currency)
+
+
 C_co = TypeVar("C_co", bound=Currency, covariant=True)
+
+
+class _ValueCurrencyPair(Frozen, Generic[C_co], metaclass=InstanceCache):
+    __slots__ = ("value", "currency")
+
+    def __init__(self, value: ParsableMoneyValue, currency: C_co, /) -> None:
+        # Type ignore is safe because metaclass delegates normalization to _normalize().
+        self.value: Final[Decimal] = value  # type: ignore[assignment]
+        self.currency: Final = currency
+
+    def __repr__(self) -> str:
+        return f"{type(self).__qualname__}({str(self.value)!r}, {self.currency})"
+
+    @property
+    def subunits(self) -> int:
+        return int(self.currency.subunit * self.value)
+
+
 C_inv = TypeVar("C_inv", bound=Currency, covariant=False, contravariant=False)
 
 
 @final
-class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
-    __slots__ = ("value", "currency")
-
-    def __init__(self, value: ParsableMoneyValue, currency: C_co, /) -> None:
-        # Type ignore is safe because metaclass handles normalization.
-        self.value: Final[Decimal] = value  # type: ignore[assignment]
-        self.currency: Final = currency
-
+class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
     @classmethod
     def _normalize(
         cls,
@@ -164,18 +192,11 @@ class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
         currency: C_inv,
         /,
     ) -> tuple[PositiveDecimal, C_inv]:
-        if not isinstance(currency, Currency):
-            raise TypeError(
-                f"Argument 'currency' of {cls.__qualname__!r} must be a Currency, "
-                f"got object of type {type(currency)!r}"
-            )
+        _validate_currency_arg(cls, currency)
         return currency.normalize_value(value), currency
 
-    def __repr__(self) -> str:
-        return f"{type(self).__qualname__}({str(self.value)!r}, {self.currency})"
-
     def __hash__(self) -> int:
-        return hash((self.currency, self.value))
+        return hash((type(self), self.currency, self.value))
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, int) and other == 0:
@@ -226,18 +247,14 @@ class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
         """
         if isinstance(other, Money) and self.currency == other.currency:
             value = self.value - other.value
-            return (
-                Money(value, self.currency)
-                if value >= 0
-                else Overdraft(Money(-value, self.currency))
-            )
+            return _dispatch_type(value, self.currency)
         return NotImplemented
 
     def __pos__(self) -> Self:
         return self
 
-    def __neg__(self: Money[C_co]) -> Overdraft[C_co]:
-        return Overdraft(self)
+    def __neg__(self: Money[C_co]) -> Overdraft[C_co] | Money[C_co]:
+        return self if self.value == 0 else Overdraft(self.value, self.currency)
 
     # TODO: Support precision-lossy multiplication with floats?
     @overload
@@ -253,14 +270,10 @@ class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
         other: object,
     ) -> Money[C_co] | SubunitFraction[C_co] | Overdraft[C_co]:
         if isinstance(other, int):
-            return (
-                Money(self.value * other, self.currency)
-                if other >= 0
-                else Overdraft(Money(-self.value * other, self.currency))
-            )
+            return _dispatch_type(self.value * other, self.currency)
         if isinstance(other, Decimal):
             return SubunitFraction(
-                Fraction(self.as_subunit()) * Fraction(other),
+                Fraction(self.subunits) * Fraction(other),
                 self.currency,
             )
         return NotImplemented
@@ -301,8 +314,8 @@ class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
         except decimal.DivisionByZero as e:
             raise DivisionByZero from e
 
-        under_subunit = under.as_subunit()
-        remainder = self.as_subunit() - under_subunit * other
+        under_subunit = under.subunits
+        remainder = self.subunits - under_subunit * other
         over = Money.from_subunit(under_subunit + 1, self.currency)
 
         return (
@@ -327,9 +340,6 @@ class Money(Frozen, Generic[C_co], metaclass=InstanceCache):
 
     def __abs__(self) -> Self:
         return self
-
-    def as_subunit(self) -> int:
-        return int(self.currency.subunit * self.value)
 
     @classmethod
     # This needs HKT to allow typing to work properly for subclasses of Money.
@@ -411,7 +421,7 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
         if isinstance(other, SubunitFraction) and self.currency == other.currency:
             return self.value == other.value
         if isinstance(other, Money) and self.currency == other.currency:
-            return self.value == other.as_subunit()
+            return self.value == other.subunits
         return NotImplemented
 
     @classmethod
@@ -420,17 +430,23 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
         money: Money[C_co],
         denominator: int | Fraction = 1,
     ) -> SubunitFraction[C_co]:
-        return SubunitFraction(
-            Fraction(money.as_subunit(), denominator), money.currency
-        )
+        return SubunitFraction(Fraction(money.subunits, denominator), money.currency)
 
-    def round_money(self, rounding: Round) -> Money[C_co]:
+    def _round_value(self, rounding: Round) -> Decimal:
         main_unit = Decimal(float(self.value / self.currency.subunit))
-        quantized = main_unit.quantize(
+        return main_unit.quantize(
             exp=self.currency.decimal_exponent,
             rounding=rounding.value,
         )
-        return Money(quantized, self.currency)
+
+    def round_either(self, rounding: Round) -> Money[C_co] | Overdraft[C_co]:
+        return _dispatch_type(self._round_value(rounding), self.currency)
+
+    def round_money(self, rounding: Round) -> Money[C_co]:
+        return Money(self._round_value(rounding), self.currency)
+
+    def round_overdraft(self, rounding: Round) -> Overdraft[C_co]:
+        return Overdraft(-self._round_value(rounding), self.currency)
 
     @classmethod
     def __get_pydantic_core_schema__(
@@ -450,35 +466,29 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
 
 
 @final
-class Overdraft(Frozen, Generic[C_co], metaclass=InstanceCache):
-    __slots__ = ("money",)
-
-    def __init__(self, money: Money[C_co]) -> None:
-        self.money: Final = money
-
+class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
     @classmethod
-    def _normalize(cls, money: Money[C_co]) -> tuple[Money[C_co]]:
-        if not isinstance(money, Money):
-            raise TypeError(
-                f"Argument 'money' of {cls.__qualname__!r} must be a Money instance, "
-                f"got object of type {type(money)!r}"
+    def _normalize(
+        cls,
+        value: ParsableMoneyValue,
+        currency: C_inv,
+        /,
+    ) -> tuple[PositiveDecimal, C_inv]:
+        _validate_currency_arg(cls, currency)
+        normalized_value = currency.normalize_value(value)
+        if normalized_value == 0:
+            raise InvalidOverdraftValue(
+                f"{cls.__qualname__} cannot be instantiated with a value of zero, "
+                f"the {Money.__qualname__} class should be used instead."
             )
-        return (money,)
-
-    def __repr__(self) -> str:
-        return (
-            f"{type(self).__qualname__}"
-            f"({str(self.money.value)!r}, {self.money.currency})"
-        )
+        return currency.normalize_value(value), currency
 
     def __hash__(self) -> int:
-        return hash((type(self), self.money))
+        return hash((type(self), self.currency, self.value))
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, int) and other == 0:
-            return self.money.value == other
-        if isinstance(other, Overdraft) and other.money.currency == self.money.currency:
-            return self.money.value == other.money.value
+        if isinstance(other, Overdraft):
+            return self.currency == other.currency and self.value == other.value
         return NotImplemented
 
     @overload
@@ -493,10 +503,10 @@ class Overdraft(Frozen, Generic[C_co], metaclass=InstanceCache):
         ...
 
     def __add__(self: Overdraft[C_co], other: object) -> Money[C_co] | Overdraft[C_co]:
-        if isinstance(other, Money):
-            return other - self.money
-        if isinstance(other, Overdraft):
-            return Overdraft(self.money + other.money)
+        if isinstance(other, Overdraft) and self.currency == other.currency:
+            return Overdraft(self.value + other.value, self.currency)
+        if isinstance(other, Money) and self.currency == other.currency:
+            return _dispatch_type(other.value - self.value, self.currency)
         return NotImplemented
 
     def __radd__(
@@ -516,28 +526,46 @@ class Overdraft(Frozen, Generic[C_co], metaclass=InstanceCache):
     ) -> Money[C_co] | Overdraft[C_co]:
         ...
 
-    def __sub__(self: Overdraft[C_co], other: object) -> Money[C_co] | Overdraft[C_co]:
-        match other:
-            case Money(currency=self.money.currency) as other:
-                return Overdraft(self.money + other)
-            case Overdraft(money=Money(currency=self.money.currency)) as other:
-                return other.money - self.money
-        return NotImplemented
+    def __sub__(
+        self: Overdraft[C_co],
+        other: Money[C_co] | Overdraft[C_co],
+    ) -> Money[C_co] | Overdraft[C_co]:
+        if not isinstance(other, Money | Overdraft) or self.currency != other.currency:
+            return NotImplemented
+
+        value = (
+            self.value - other.value
+            if isinstance(other, Overdraft)
+            else -(self.value + other.value)
+        )
+
+        return _dispatch_type(value, self.currency)
 
     def __rsub__(self: Overdraft[C_co], other: Money[C_co]) -> Money[C_co]:
-        match other:
-            case Money(currency=self.money.currency) as other:
-                return self.money + other
+        if isinstance(other, Money) and self.currency == other.currency:
+            # In the interpretation that an overdraft is a negative value, this is
+            # equivalent to subtracting a negative value, which can be equivalently
+            # rewritten as an addition (x - (-y) == x + y).
+            return Money(self.value + other.value, self.currency)
         return NotImplemented
 
     def __abs__(self: Overdraft[C_co]) -> Money[C_co]:
-        return self.money
+        return Money(self.value, self.currency)
 
     def __neg__(self: Overdraft[C_co]) -> Money[C_co]:
-        return self.money
+        return Money(self.value, self.currency)
 
     def __pos__(self: Overdraft[C_co]) -> Overdraft[C_co]:
         return self
+
+    @classmethod
+    # This needs HKT to allow typing to work properly for subclasses of Overdraft, that
+    # would also allow moving the implementation to the shared super-class.
+    def from_subunit(cls, value: int, currency: C_inv) -> Overdraft[C_inv]:
+        return cls(  # type: ignore[return-value]
+            Decimal(value) / currency.subunit,
+            currency,  # type: ignore[arg-type]
+        )
 
     @classmethod
     def __get_pydantic_core_schema__(

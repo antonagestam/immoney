@@ -2,7 +2,11 @@ class ImmoneyError(Exception):
     ...
 
 
-class MoneyParseError(ImmoneyError, ValueError):
+class ParseError(ImmoneyError, ValueError):
+    ...
+
+
+class InvalidOverdraftValue(ParseError):
     ...
 
 

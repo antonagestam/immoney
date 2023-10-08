@@ -99,7 +99,7 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
     @staticmethod
     def serialize(value: Money[Currency], *args: object) -> MoneyDict:
         return {
-            "subunits": value.as_subunit(),
+            "subunits": value.subunits,
             "currency": str(value.currency),
         }
 
@@ -243,8 +243,8 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
     @staticmethod
     def serialize(value: Overdraft[Currency], *args: object) -> OverdraftDict:
         return {
-            "overdraft_subunits": value.money.as_subunit(),
-            "currency": str(value.money.currency),
+            "overdraft_subunits": value.subunits,
+            "currency": str(value.currency),
         }
 
     @staticmethod
@@ -254,7 +254,7 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
             wrapped=core_schema.typed_dict_schema(
                 {
                     "overdraft_subunits": core_schema.typed_dict_field(
-                        core_schema.int_schema(ge=0),
+                        core_schema.int_schema(gt=0),
                         required=True,
                     ),
                     "currency": core_schema.typed_dict_field(
@@ -275,12 +275,11 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
             _registry: CurrencyRegistry[C] = registry,
         ) -> Overdraft[Currency]:
             if isinstance(value, Overdraft):
-                if value.money.currency.code not in _registry:
+                if value.currency.code not in _registry:
                     raise ValueError("Currency is not registered.")
                 return value
             currency = _registry[value["currency"]]
-            money_value = currency.from_subunit(value["overdraft_subunits"])
-            return Overdraft(money_value)
+            return currency.overdraft_from_subunit(value["overdraft_subunits"])
 
         return validate_overdraft
 
@@ -292,17 +291,16 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
             _currency: Currency = currency,
         ) -> Overdraft[Currency]:
             if isinstance(value, Overdraft):
-                if value.money.currency is not _currency:
+                if value.currency is not _currency:
                     raise ValueError(
-                        f"Invalid currency, got {value.money.currency!r}, expected "
+                        f"Invalid currency, got {value.currency!r}, expected "
                         f"{_currency!r}."
                     )
                 return value
             # We ignore coverage here as this is enforced by schema.
             if value["currency"] != _currency.code:  # pragma: no cover
                 raise ValueError(f"Invalid currency, expected {_currency!s}.")
-            money_value = _currency.from_subunit(value["overdraft_subunits"])
-            return Overdraft(money_value)
+            return _currency.overdraft_from_subunit(value["overdraft_subunits"])
 
         return validate_overdraft
 
