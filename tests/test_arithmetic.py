@@ -25,7 +25,7 @@ def _from_integer_subunit(value: int) -> Money[SEKType] | Overdraft[SEKType]:
 @example([0, -1])
 @example([10000000000000000000000000001])
 def test_sequence_of_additions(values: list[int]):
-    monetary_sum = sum((_from_integer_subunit(value) for value in values), SEK(0))
+    monetary_sum = sum((_from_integer_subunit(value) for value in values), SEK.zero)
     int_sum = sum(values)
     assert int_sum == _to_integer_subunit(monetary_sum)
 

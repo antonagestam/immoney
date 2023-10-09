@@ -34,10 +34,10 @@ In real life we cannot split the subunit of a currency, and so for our abstracti
 safely reflect reality, we shouldn't be able to do that in code either. Therefore
 instead of defining division to return a value with precision loss, the implementation
 of division for `Money` returns a tuple of new instances with the value split up as even
-as possible.
+as possible. This is implemented as `Money.__floordiv__`.
 
 ```pycon
->>> Money("0.11", SEK) / 3
+>>> Money("0.11", SEK) // 3
 (Money('0.04', SEK), Money('0.04', SEK), Money('0.03', SEK))
 ```
 
@@ -49,10 +49,10 @@ sum of the instances returned by the operation always equal the original numerat
 Sometimes we do need to represent fractions of monetary values that are smaller than the
 subunit of a currency, for instance as a partial result of a larger equation. For that
 purpose, this library exposes a `SubunitFraction` type. This type is used as return type
-for `Money.__floordiv__`.
+for `Money.__truediv__`.
 
 ```pycon
->>> SEK(13) // 3
+>>> SEK(13) / 3
 SubunitFraction('1300/3', SEK)
 ```
 
@@ -60,7 +60,7 @@ Because there is no guarantee that a `SubunitFraction` is a whole subunit (by de
 ...), converting back to `Money` can only be done with precision loss.
 
 ```pycon
->>> (SEK(13) // 3).round_money(Round.DOWN)
+>>> (SEK(13) / 3).round_money(Round.DOWN)
 Money('4.33', SEK)
 ```
 
