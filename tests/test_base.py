@@ -491,21 +491,20 @@ class TestMoney:
             b * a  # type: ignore[operator]
 
     @pytest.mark.parametrize("value", [object(), 1.0, "", {}])
-    def test_raises_type_error_for_truediv_with_invalid_denominator(
+    def test_raises_type_error_for_floordiv_with_invalid_denominator(
         self, value: object
     ):
         with pytest.raises(TypeError):
-            SEK(1) / value
+            SEK(1) // value
 
     @given(monies(), integers(min_value=1, max_value=500))
-    def test_returns_evenly_divided_parts_on_integer_truediv(
+    def test_returns_evenly_divided_parts_on_integer_floordiv(
         self,
         dividend: Money[Any],
         divisor: int,
     ):
         currency = dividend.currency
-        # dividend = SEK(dividend_value)
-        quotient = dividend / divisor
+        quotient = dividend // divisor
 
         # The number of parts the value is divided among is equal to divisor.
         assert len(quotient) == divisor
@@ -517,35 +516,35 @@ class TestMoney:
         assert sorted(quotient, reverse=True) == list(quotient)
 
     @given(monies())
-    def test_raises_division_by_zero_on_truediv_with_zero(self, value: Money[Any]):
+    def test_raises_division_by_zero_on_floordiv_with_zero(self, value: Money[Any]):
         non_zero = value + value.currency.one_subunit
         with pytest.raises(DivisionByZero):
-            non_zero / 0
+            non_zero // 0
 
     @pytest.mark.parametrize("value", [object(), 1.0, Decimal("1.0"), {}])
-    def test_raises_type_error_for_floordiv_with_invalid_denominator(
+    def test_raises_type_error_for_truediv_with_invalid_denominator(
         self, value: object
     ):
         with pytest.raises(TypeError):
-            SEK(1) // value  # type: ignore[operator]
+            SEK(1) / value  # type: ignore[operator]
 
     @given(monies(), integers(min_value=1))
-    def test_returns_subunit_fraction_on_floordiv(
+    def test_returns_subunit_fraction_on_truediv(
         self, dividend: Money[Any], divisor: int
     ):
-        quotient = dividend // divisor
+        quotient = dividend / divisor
 
         assert isinstance(quotient, SubunitFraction)
         assert quotient.value == Fraction(dividend.subunits, divisor)
         assert quotient.currency == dividend.currency
 
     @given(monies())
-    def test_raises_division_by_zero_on_floordiv_with_zero(self, value: Money[Any]):
+    def test_raises_division_by_zero_on_truediv_with_zero(self, value: Money[Any]):
         non_zero = value + value.currency.one_subunit
         with pytest.raises(DivisionByZero):
-            non_zero // 0
+            non_zero / 0
         with pytest.raises(DivisionByZero):
-            non_zero // Fraction()
+            non_zero / Fraction()
 
     def test_as_subunit_returns_value_as_subunit_integer(self):
         class FooType(Currency):

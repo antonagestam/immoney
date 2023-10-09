@@ -311,18 +311,18 @@ class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
     ) -> Money[C_co] | SubunitFraction[C_co] | Overdraft[C_co]:
         return self.__mul__(other)
 
-    def __truediv__(self: Money[C_co], other: object) -> tuple[Money[C_co], ...]:
+    def __floordiv__(self: Money[C_co], other: object) -> tuple[Money[C_co], ...]:
         """
         Divides the original value over the numerator and returns a tuple of new
         Money instances where the original value is spread as evenly as possible. The
         sum of the returned values will always equal the orignal value.
 
         >>> from immoney.currencies import SEK
-        >>> Money(2, SEK) / 2
+        >>> Money(2, SEK) // 2
         (Money('1.00', SEK), Money('1.00', SEK))
-        >>> Money(3, SEK) / 2
+        >>> Money(3, SEK) // 2
         (Money('1.50', SEK), Money('1.50', SEK))
-        >>> Money("0.03", SEK) / 2
+        >>> Money("0.03", SEK) // 2
         (Money('0.02', SEK), Money('0.01', SEK))
         """
         if not isinstance(other, int):
@@ -343,14 +343,14 @@ class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
         )
 
     @overload
-    def __floordiv__(self, other: int) -> SubunitFraction[C_co]:
+    def __truediv__(self, other: int) -> SubunitFraction[C_co]:
         ...
 
     @overload
-    def __floordiv__(self, other: Fraction) -> SubunitFraction[C_co]:
+    def __truediv__(self, other: Fraction) -> SubunitFraction[C_co]:
         ...
 
-    def __floordiv__(self, other: object) -> SubunitFraction[C_co]:
+    def __truediv__(self, other: object) -> SubunitFraction[C_co]:
         if not isinstance(other, (int, Fraction)):
             return NotImplemented
         if other == 0:
