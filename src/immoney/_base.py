@@ -3,7 +3,6 @@ from __future__ import annotations
 import abc
 import enum
 import math
-from decimal import ROUND_DOWN
 from decimal import Decimal
 from fractions import Fraction
 from functools import cached_property
@@ -71,9 +70,12 @@ class Currency(Frozen, abc.ABC):
         return hash((type(self), self.code, self.subunit))
 
     @cached_property
+    def subunit_width(self) -> int:
+        return math.ceil(math.log10(self.subunit))
+
+    @cached_property
     def decimal_exponent(self) -> Decimal:
-        # Is there a smarter way to do this?
-        return Decimal("0." + int(math.log10(self.subunit)) * "0")
+        return Decimal("0." + self.subunit_width * "0")
 
     @cached_property
     def zero(self) -> Money[Self]:
@@ -200,12 +202,23 @@ class _ValueCurrencyPair(Frozen, Generic[C_co], metaclass=InstanceCache):
                 raise TypeError(f"Invalid call signature for {cls.__qualname__}")
 
     def __repr__(self) -> str:
-        return f"{type(self).__qualname__}({str(self.decimal)!r}, {self.currency})"
+        main_unit, subunits = self.str_parts()
+        return f"{type(self).__qualname__}('{main_unit}.{subunits}', {self.currency})"
 
     @property
     def decimal(self) -> Decimal:
         value = Decimal(self.subunits) / self.currency.subunit
         return value.quantize(self.currency.decimal_exponent)
+
+    def str_parts(self) -> tuple[str, str]:
+        string_value = str(self.subunits)
+        subunit_width = self.currency.subunit_width
+        length = len(string_value)
+        return (
+            ("0", "0" * (subunit_width - length) + string_value)
+            if length <= subunit_width
+            else (string_value[:-subunit_width], string_value[-subunit_width:])
+        )
 
 
 C_inv = TypeVar("C_inv", bound=Currency, covariant=False, contravariant=False)
@@ -213,6 +226,10 @@ C_inv = TypeVar("C_inv", bound=Currency, covariant=False, contravariant=False)
 
 @final
 class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
+    def __str__(self) -> str:
+        main_units, subunits = self.str_parts()
+        return f"{main_units}.{subunits}\xa0{self.currency.code}"
+
     def __hash__(self) -> int:
         return hash((type(self), self.currency, self.subunits))
 
@@ -369,14 +386,6 @@ class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
         )
 
     @classmethod
-    # This needs HKT to allow typing to work properly for subclasses of Money.
-    def floored(cls, value: Decimal, currency: C_inv) -> Money[C_inv]:
-        return cls(
-            value.quantize(currency.decimal_exponent, rounding=ROUND_DOWN),
-            currency,
-        )
-
-    @classmethod
     def __get_pydantic_core_schema__(
         cls,
         source_type: type,
@@ -517,6 +526,10 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
                 f"the {Money.__qualname__} class should be used instead."
             )
         return subunits, currency
+
+    def __str__(self) -> str:
+        main_units, subunits = self.str_parts()
+        return f"-{main_units}.{subunits}\xa0{self.currency.code}"
 
     def __hash__(self) -> int:
         return hash((type(self), self.currency, self.subunits))

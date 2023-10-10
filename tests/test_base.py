@@ -219,11 +219,31 @@ class TestMoney:
             (SEK("523.12"), "Money('523.12', SEK)"),
             (SEK("52"), "Money('52.00', SEK)"),
             (SEK("0"), "Money('0.00', SEK)"),
+            (SEK("0.01"), "Money('0.01', SEK)"),
+            (SEK("0.49"), "Money('0.49', SEK)"),
+            (SEK("0.99"), "Money('0.99', SEK)"),
+            (SEK("99.99"), "Money('99.99', SEK)"),
             (NOK(8000), "Money('8000.00', NOK)"),
         ),
     )
     def test_repr(self, value: Money[Any], expected: str):
         assert expected == repr(value)
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        (
+            (SEK("523.12"), "523.12\xa0SEK"),
+            (SEK("52"), "52.00\xa0SEK"),
+            (SEK("0"), "0.00\xa0SEK"),
+            (SEK("0.01"), "0.01\xa0SEK"),
+            (SEK("0.49"), "0.49\xa0SEK"),
+            (SEK("0.99"), "0.99\xa0SEK"),
+            (SEK("99.99"), "99.99\xa0SEK"),
+            (NOK(8000), "8000.00\xa0NOK"),
+        ),
+    )
+    def test_str(self, value: Money[Any], expected: str):
+        assert expected == str(value)
 
     def test_hash(self):
         a = SEK(23)
@@ -577,17 +597,6 @@ class TestMoney:
     def test_subunit_roundtrip(self, currency: Currency, value: int):
         assert value == Money.from_subunit(value, currency).subunits
 
-    def test_floored_returns_closest_currency_value(self):
-        assert Money.floored(Decimal("0.001"), SEK) == SEK(0)
-        assert Money.floored(Decimal("0.009"), SEK) == SEK(0)
-        assert Money.floored(Decimal("0.010"), SEK) == SEK("0.01")
-        assert Money.floored(Decimal("0.019"), SEK) == SEK("0.01")
-        assert Money.floored(Decimal("-0.001"), SEK) == SEK(0)
-
-    def test_floored_raises_for_invalid_value(self):
-        with pytest.raises(ParseError):
-            Money.floored(Decimal("-0.0101"), SEK)
-
 
 class TestSubunitFraction:
     def test_init_normalizes_value(self):
@@ -794,6 +803,21 @@ class TestOverdraft:
     )
     def test_repr(self, value: SubunitFraction[Any], expected: str):
         assert expected == repr(value)
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        (
+            (SEK.overdraft("523.12"), "-523.12\xa0SEK"),
+            (SEK.overdraft("52"), "-52.00\xa0SEK"),
+            (SEK.overdraft("0.01"), "-0.01\xa0SEK"),
+            (SEK.overdraft("0.49"), "-0.49\xa0SEK"),
+            (SEK.overdraft("0.99"), "-0.99\xa0SEK"),
+            (SEK.overdraft("99.99"), "-99.99\xa0SEK"),
+            (NOK.overdraft(8000), "-8000.00\xa0NOK"),
+        ),
+    )
+    def test_str(self, value: Money[Any], expected: str):
+        assert expected == str(value)
 
     def test_hash(self):
         a = SEK.overdraft(23)
