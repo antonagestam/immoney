@@ -381,12 +381,14 @@ class TestTruediv:
         ("a", "b", "expected"),
         [
             (SEK.overdraft("0.75"), 2, SEK.fraction(-75, 2)),
+            (SEK.overdraft("0.75"), -2, SEK.fraction(75, 2)),
             (SEK.overdraft("0.75"), Fraction(1, 3), SEK.fraction(-225)),
+            (SEK.overdraft("0.75"), Fraction(-1, 3), SEK.fraction(225)),
         ],
     )
     def test_can_truediv(
         self,
-        a: SubunitFraction[SEKType],
+        a: Overdraft[SEKType],
         b: int | Fraction,
         expected: SubunitFraction[SEKType],
     ) -> None:
@@ -397,14 +399,16 @@ class TestTruediv:
         ("a", "b", "expected"),
         [
             (2, SEK.overdraft("0.75"), SEK.fraction(-2, 75)),
+            (-2, SEK.overdraft("0.75"), SEK.fraction(2, 75)),
             (Fraction(1, 3), SEK.overdraft("0.75"), SEK.fraction(-1, 225)),
+            (Fraction(-1, 3), SEK.overdraft("0.75"), SEK.fraction(1, 225)),
             (0, SEK.overdraft("0.75"), SEK.fraction(0)),
         ],
     )
     def test_can_rtruediv(
         self,
         a: int | Fraction,
-        b: SubunitFraction[SEKType],
+        b: Overdraft[SEKType],
         expected: SubunitFraction[SEKType],
     ) -> None:
         assert_type(a / b, SubunitFraction[SEKType])
