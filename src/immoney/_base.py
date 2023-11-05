@@ -715,6 +715,44 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
     def __pos__(self: Overdraft[C_co]) -> Overdraft[C_co]:
         return self
 
+    @overload
+    def __mul__(self, other: int) -> Money[C_co] | Overdraft[C_co]:
+        ...
+
+    @overload
+    def __mul__(self, other: Decimal) -> SubunitFraction[C_co]:
+        ...
+
+    @overload
+    def __mul__(self, other: Fraction) -> SubunitFraction[C_co]:
+        ...
+
+    def __mul__(
+        self,
+        other: object,
+    ) -> Money[C_co] | SubunitFraction[C_co] | Self:
+        if isinstance(other, int):
+            return _dispatch_type(-self.subunits * other, self.currency)
+        if isinstance(other, Fraction):
+            return SubunitFraction(-self.subunits * other, self.currency)
+        if isinstance(other, Decimal):
+            return SubunitFraction(-self.subunits * Fraction(other), self.currency)
+        return NotImplemented
+
+    @overload
+    def __rmul__(self, other: int) -> Money[C_co] | Self:
+        ...
+
+    @overload
+    def __rmul__(self, other: Decimal | Fraction) -> SubunitFraction[C_co]:
+        ...
+
+    def __rmul__(
+        self,
+        other: int | Decimal | Fraction,
+    ) -> Money[C_co] | SubunitFraction[C_co] | Self:
+        return self.__mul__(other)
+
     @classmethod
     # This needs HKT to allow typing to work properly for subclasses of Overdraft, that
     # would also allow moving the implementation to the shared super-class.
