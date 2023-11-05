@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from fractions import Fraction
 from typing import Any
 
 import pytest
@@ -9,6 +10,7 @@ from hypothesis import example
 from hypothesis import given
 from hypothesis.strategies import integers
 from hypothesis.strategies import text
+from typing_extensions import assert_type
 
 from immoney import Currency
 from immoney import Money
@@ -318,3 +320,56 @@ def test_cannot_subtract_arbitrary_object(value: object) -> None:
 @example(SEK, 1)
 def test_subunit_roundtrip(currency: Currency, value: int) -> None:
     assert value == Overdraft.from_subunit(value, currency).subunits
+
+
+class TestMul:
+    @pytest.mark.parametrize(
+        ("a", "b", "expected_result"),
+        [
+            (SEK.overdraft("12.34"), 2, SEK.overdraft("24.68")),
+            (SEK.overdraft("12.34"), -2, SEK("24.68")),
+            (SEK.overdraft(10), Decimal("0.5"), SEK.fraction(-500)),
+            (SEK.overdraft(10), Decimal("-0.5"), SEK.fraction(500)),
+            (SEK.overdraft(10), Fraction(1, 2), SEK.fraction(-500)),
+            (SEK.overdraft(10), Fraction(-1, 2), SEK.fraction(500)),
+        ],
+    )
+    def test_can_multiply(
+        self,
+        a: Overdraft[SEKType],
+        b: int | Decimal | Fraction,
+        expected_result: Money[SEKType] | Overdraft[SEKType] | SubunitFraction[SEKType],
+    ) -> None:
+        assert_type(
+            a * b, Money[SEKType] | Overdraft[SEKType] | SubunitFraction[SEKType]
+        )
+        assert_type(
+            b * a, Money[SEKType] | Overdraft[SEKType] | SubunitFraction[SEKType]
+        )
+        assert a * b == expected_result
+        assert b * a == expected_result
+
+    @pytest.mark.parametrize(
+        ("a", "b"),
+        (
+            (SEK.overdraft(3), SEK.overdraft(3)),
+            (SEK.overdraft(1), SEK(1)),
+            (SEK.overdraft(1), NOK.overdraft(1)),
+            (SEK.overdraft(1), object()),
+        ),
+    )
+    def test_raises_type_error_for_invalid_other(
+        self,
+        a: Overdraft[Currency],
+        b: object,
+    ) -> None:
+        with pytest.raises(
+            TypeError,
+            match=r"^unsupported operand type\(s\) for \*: 'Overdraft' and",
+        ):
+            a * b  # type: ignore[operator]
+        with pytest.raises(
+            TypeError,
+            match=(r"^unsupported operand type\(s\) for \*: '(\w+)' and 'Overdraft'$"),
+        ):
+            b * a  # type: ignore[operator]
