@@ -137,6 +137,45 @@ instances instead of instantiating new ones. This happens transparently when
 instantiating a new `Money` instance and can lead to faster code and less consumed
 memory.
 
+#### Support for localization
+
+Because localization is a large and complex problem to solve, rather than reinventing
+the wheel, this is mostly outsourced to the [Babel library][babel]. There's a wrapping
+function provided around Babel's `format_currency`, and a dependency "extra" to install
+a compatible version.
+
+[babel]: https://github.com/python-babel/babel
+
+To use `immoney.babel`, make sure to install a compatible version.
+
+```shell
+$ pip install --require-venv immoney[babel]
+```
+
+The function can be used with instances of `Money` and `Overdraft`.
+
+```pycon
+>>> from immoney.babel import format_monetary
+>>> from immoney.currencies import KRW, USD
+>>> format_monetary(KRW(1234), locale="KO")
+'₩1,234'
+>>> format_monetary(USD("12.34"), locale="NB")
+'USD\xa012,34'
+```
+
+Because `format_monetary` is just a simple wrapper, you need to refer to [the
+documentation of Babel's `format_currency`][format-currency] for the full documentation
+of accepted parameters and their behavior.
+
+[format-currency]:
+  https://babel.pocoo.org/en/latest/api/numbers.html#babel.numbers.format_currency
+
+> [!NOTE]\
+> Because Babel is not a typed library, you will likely want to install [types-babel] in
+> your static type checking CI pipeline.
+
+[types-babel]: https://pypi.org/project/types-babel/
+
 #### Retrieving currencies by code
 
 Currencies can be retrieved by their codes via `immoney.currencies.registry`.

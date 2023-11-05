@@ -68,6 +68,7 @@ repos:
           - typing-extensions==4.6.3
           - hypothesis==6.54.4
           - pydantic==2.0b3
+          - types-babel==2.11.0.15
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: "v2.7.1"
     hooks:
