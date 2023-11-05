@@ -567,6 +567,17 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
             money.currency,
         )
 
+    @classmethod
+    def from_overdraft(
+        cls,
+        overdraft: Overdraft[C_co],
+        denominator: int | Fraction = 1,
+    ) -> SubunitFraction[C_co]:
+        return SubunitFraction(
+            Fraction(-overdraft.subunits, denominator),
+            overdraft.currency,
+        )
+
     def _round_subunit(self, rounding: Round) -> int:
         remainder = self.value % 1
 
@@ -752,6 +763,36 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
         other: int | Decimal | Fraction,
     ) -> Money[C_co] | SubunitFraction[C_co] | Self:
         return self.__mul__(other)
+
+    @overload
+    def __truediv__(self, other: int) -> SubunitFraction[C_co]:
+        ...
+
+    @overload
+    def __truediv__(self, other: Fraction) -> SubunitFraction[C_co]:
+        ...
+
+    def __truediv__(self, other: object) -> SubunitFraction[C_co]:
+        if not isinstance(other, (int, Fraction)):
+            return NotImplemented
+        if other == 0:
+            raise DivisionByZero
+        return SubunitFraction.from_overdraft(self, other)
+
+    @overload
+    def __rtruediv__(self, other: int) -> SubunitFraction[C_co]:
+        ...
+
+    @overload
+    def __rtruediv__(self, other: Fraction) -> SubunitFraction[C_co]:
+        ...
+
+    def __rtruediv__(self, other: object) -> SubunitFraction[C_co]:
+        if not isinstance(other, (int, Fraction)):
+            return NotImplemented
+        if other == 0:
+            return SubunitFraction(0, self.currency)
+        return 1 / SubunitFraction.from_overdraft(self, other)
 
     @classmethod
     # This needs HKT to allow typing to work properly for subclasses of Overdraft, that
