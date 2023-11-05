@@ -532,3 +532,75 @@ class TestMul:
             match=r"^unsupported operand type\(s\) for \*: '(\w+)' and 'Money'$",
         ):
             b * a  # type: ignore[operator]
+
+
+class TestTruediv:
+    @pytest.mark.parametrize(
+        ("a", "b", "expected"),
+        [
+            (SEK("0.75"), 2, SEK.fraction(75, 2)),
+            (SEK("0.75"), -2, SEK.fraction(-75, 2)),
+            (SEK("0.75"), Fraction(1, 3), SEK.fraction(225)),
+            (SEK("0.75"), Fraction(-1, 3), SEK.fraction(-225)),
+        ],
+    )
+    def test_can_truediv(
+        self,
+        a: Money[SEKType],
+        b: int | Fraction,
+        expected: SubunitFraction[SEKType],
+    ) -> None:
+        assert_type(a / b, SubunitFraction[SEKType])
+        assert a / b == expected
+
+    @pytest.mark.parametrize(
+        ("a", "b", "expected"),
+        [
+            (2, SEK("0.75"), SEK.fraction(2, 75)),
+            (-2, SEK("0.75"), SEK.fraction(-2, 75)),
+            (Fraction(1, 3), SEK("0.75"), SEK.fraction(1, 225)),
+            (Fraction(-1, 3), SEK("0.75"), SEK.fraction(-1, 225)),
+            (0, SEK("0.75"), SEK.fraction(0)),
+        ],
+    )
+    def test_can_rtruediv(
+        self,
+        a: int | Fraction,
+        b: Money[SEKType],
+        expected: SubunitFraction[SEKType],
+    ) -> None:
+        assert_type(a / b, SubunitFraction[SEKType])
+        assert a / b == expected
+
+    @pytest.mark.parametrize(
+        ("a", "b"),
+        (
+            (SEK(3), SEK.overdraft(3)),
+            (SEK(1), SEK(1)),
+            (SEK(1), NOK.overdraft(1)),
+            (SEK(1), object()),
+        ),
+    )
+    def test_raises_type_error_for_invalid_other(
+        self,
+        a: Money[Currency],
+        b: object,
+    ) -> None:
+        with pytest.raises(
+            TypeError,
+            match=r"^unsupported operand type\(s\) for /: 'Money' and",
+        ):
+            a / b  # type: ignore[operator]
+        with pytest.raises(
+            TypeError,
+            match=(r"^unsupported operand type\(s\) for /: '(\w+)' and 'Money'$"),
+        ):
+            b / a  # type: ignore[operator]
+
+    def test_truediv_raises_division_by_zero(self) -> None:
+        with pytest.raises(DivisionByZero):
+            SEK(1) / 0
+
+    def test_rtruediv_raises_division_by_zero(self) -> None:
+        with pytest.raises(DivisionByZero):
+            10 / SEK(0)

@@ -404,6 +404,23 @@ class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
             raise DivisionByZero
         return SubunitFraction.from_money(self, other)
 
+    @overload
+    def __rtruediv__(self, other: int) -> SubunitFraction[C_co]:
+        ...
+
+    @overload
+    def __rtruediv__(self, other: Fraction) -> SubunitFraction[C_co]:
+        ...
+
+    def __rtruediv__(self, other: object) -> SubunitFraction[C_co]:
+        if not isinstance(other, (int, Fraction)):
+            return NotImplemented
+        if self.subunits == 0:
+            raise DivisionByZero
+        if other == 0:
+            return SubunitFraction(0, self.currency)
+        return 1 / SubunitFraction.from_money(self, other)
+
     def __abs__(self) -> Self:
         return self
 
