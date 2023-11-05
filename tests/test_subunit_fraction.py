@@ -8,13 +8,16 @@ import pytest
 from hypothesis import example
 from hypothesis import given
 from hypothesis.strategies import integers
+from typing_extensions import assert_type
 
 from immoney import Currency
 from immoney import Money
+from immoney import Overdraft
 from immoney import Round
 from immoney import SubunitFraction
 from immoney.currencies import NOK
 from immoney.currencies import SEK
+from immoney.currencies import SEKType
 from immoney.errors import ParseError
 
 from .strategies import monies
@@ -182,3 +185,71 @@ def test_round_either_returns_money_for_positive_fraction() -> None:
     assert SEK("3.32") == fraction.round_either(Round.HALF_UP)
     assert SEK("3.32") == fraction.round_either(Round.HALF_EVEN)
     assert SEK("3.32") == fraction.round_either(Round.HALF_DOWN)
+
+
+class TestAdd:
+    @pytest.mark.parametrize(
+        ("a", "b", "expected"),
+        [
+            (
+                SubunitFraction(Fraction(1, 2), SEK),
+                SubunitFraction(Fraction(1, 4), SEK),
+                SubunitFraction(Fraction(3, 4), SEK),
+            ),
+            (
+                SubunitFraction(Fraction(997, 3), SEK),
+                SubunitFraction(Fraction(13, 17), SEK),
+                SubunitFraction(Fraction(16988, 51), SEK),
+            ),
+            (
+                SubunitFraction(Fraction(997, 3), SEK),
+                SEK("0.01"),
+                SubunitFraction(Fraction(1000, 3), SEK),
+            ),
+            (
+                SubunitFraction(Fraction(997, 3), SEK),
+                SEK.overdraft("0.01"),
+                SubunitFraction(Fraction(994, 3), SEK),
+            ),
+        ],
+    )
+    def test_can_add(
+        self,
+        a: SubunitFraction[SEKType],
+        b: SubunitFraction[SEKType] | Money[SEKType] | Overdraft[SEKType],
+        expected: SubunitFraction[SEKType],
+    ) -> None:
+        assert_type(a + b, SubunitFraction[SEKType])
+        assert_type(b + a, SubunitFraction[SEKType])
+        assert a + b == expected
+        assert b + a == expected
+
+    @pytest.mark.parametrize(
+        ("a", "b"),
+        (
+            (
+                SubunitFraction(Fraction(997, 3), SEK),
+                SubunitFraction(Fraction(997, 3), NOK),
+            ),
+            (SubunitFraction(Fraction(997, 3), SEK), NOK(1)),
+            (SubunitFraction(Fraction(997, 3), SEK), NOK.overdraft(1)),
+            (SubunitFraction(Fraction(997, 3), SEK), 1),
+        ),
+    )
+    def test_raises_type_error_for_invalid_other(
+        self,
+        a: SubunitFraction[Currency],
+        b: object,
+    ) -> None:
+        with pytest.raises(
+            TypeError,
+            match=r"^unsupported operand type\(s\) for \+: 'SubunitFraction' and",
+        ):
+            a + b  # type: ignore[operator]
+        with pytest.raises(
+            TypeError,
+            match=(
+                r"^unsupported operand type\(s\) for \+: '(\w+)' and 'SubunitFraction'$"
+            ),
+        ):
+            b + a  # type: ignore[operator]
