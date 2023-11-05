@@ -20,6 +20,7 @@ from immoney._base import ParsableMoneyValue
 from immoney.currencies import NOK
 from immoney.currencies import SEK
 from immoney.currencies import SEKType
+from immoney.errors import DivisionByZero
 from immoney.errors import FrozenInstanceError
 from immoney.errors import InvalidOverdraftValue
 from immoney.errors import ParseError
@@ -373,3 +374,67 @@ class TestMul:
             match=(r"^unsupported operand type\(s\) for \*: '(\w+)' and 'Overdraft'$"),
         ):
             b * a  # type: ignore[operator]
+
+
+class TestTruediv:
+    @pytest.mark.parametrize(
+        ("a", "b", "expected"),
+        [
+            (SEK.overdraft("0.75"), 2, SEK.fraction(-75, 2)),
+            (SEK.overdraft("0.75"), Fraction(1, 3), SEK.fraction(-225)),
+        ],
+    )
+    def test_can_truediv(
+        self,
+        a: SubunitFraction[SEKType],
+        b: int | Fraction,
+        expected: SubunitFraction[SEKType],
+    ) -> None:
+        assert_type(a / b, SubunitFraction[SEKType])
+        assert a / b == expected
+
+    @pytest.mark.parametrize(
+        ("a", "b", "expected"),
+        [
+            (2, SEK.overdraft("0.75"), SEK.fraction(-2, 75)),
+            (Fraction(1, 3), SEK.overdraft("0.75"), SEK.fraction(-1, 225)),
+            (0, SEK.overdraft("0.75"), SEK.fraction(0)),
+        ],
+    )
+    def test_can_rtruediv(
+        self,
+        a: int | Fraction,
+        b: SubunitFraction[SEKType],
+        expected: SubunitFraction[SEKType],
+    ) -> None:
+        assert_type(a / b, SubunitFraction[SEKType])
+        assert a / b == expected
+
+    @pytest.mark.parametrize(
+        ("a", "b"),
+        (
+            (SEK.overdraft(3), SEK.overdraft(3)),
+            (SEK.overdraft(1), SEK(1)),
+            (SEK.overdraft(1), NOK.overdraft(1)),
+            (SEK.overdraft(1), object()),
+        ),
+    )
+    def test_raises_type_error_for_invalid_other(
+        self,
+        a: Overdraft[Currency],
+        b: object,
+    ) -> None:
+        with pytest.raises(
+            TypeError,
+            match=r"^unsupported operand type\(s\) for /: 'Overdraft' and",
+        ):
+            a / b  # type: ignore[operator]
+        with pytest.raises(
+            TypeError,
+            match=(r"^unsupported operand type\(s\) for /: '(\w+)' and 'Overdraft'$"),
+        ):
+            b / a  # type: ignore[operator]
+
+    def test_raises_division_by_zero(self) -> None:
+        with pytest.raises(DivisionByZero):
+            SEK.overdraft(1) / 0
