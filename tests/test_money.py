@@ -12,6 +12,7 @@ from hypothesis import given
 from hypothesis.strategies import decimals
 from hypothesis.strategies import integers
 from hypothesis.strategies import text
+from typing_extensions import assert_type
 
 from immoney import Currency
 from immoney import Money
@@ -19,6 +20,7 @@ from immoney import Overdraft
 from immoney import SubunitFraction
 from immoney.currencies import NOK
 from immoney.currencies import SEK
+from immoney.currencies import SEKType
 from immoney.errors import DivisionByZero
 from immoney.errors import FrozenInstanceError
 from immoney.errors import ParseError
@@ -477,3 +479,56 @@ def test_from_subunit_returns_instance() -> None:
 @example(SEK, 1)
 def test_subunit_roundtrip(currency: Currency, value: int) -> None:
     assert value == Money.from_subunit(value, currency).subunits
+
+
+class TestMul:
+    @pytest.mark.parametrize(
+        ("a", "b", "expected_result"),
+        [
+            (SEK("12.34"), 2, SEK("24.68")),
+            (SEK("12.34"), -2, SEK.overdraft("24.68")),
+            (SEK(10), Decimal("0.5"), SEK.fraction(500)),
+            (SEK(10), Decimal("-0.5"), SEK.fraction(-500)),
+            (SEK(10), Fraction(1, 2), SEK.fraction(500)),
+            (SEK(10), Fraction(-1, 2), SEK.fraction(-500)),
+        ],
+    )
+    def test_can_multiply(
+        self,
+        a: Money[SEKType],
+        b: int | Decimal | Fraction,
+        expected_result: Money[SEKType] | Overdraft[SEKType] | SubunitFraction[SEKType],
+    ) -> None:
+        assert_type(
+            a * b, Money[SEKType] | Overdraft[SEKType] | SubunitFraction[SEKType]
+        )
+        assert_type(
+            b * a, Money[SEKType] | Overdraft[SEKType] | SubunitFraction[SEKType]
+        )
+        assert a * b == expected_result
+        assert b * a == expected_result
+
+    @pytest.mark.parametrize(
+        ("a", "b"),
+        (
+            (SEK(3), SEK.overdraft(3)),
+            (SEK(1), SEK(1)),
+            (SEK(1), NOK.overdraft(1)),
+            (SEK(1), object()),
+        ),
+    )
+    def test_raises_type_error_for_invalid_other(
+        self,
+        a: Money[Currency],
+        b: object,
+    ) -> None:
+        with pytest.raises(
+            TypeError,
+            match=r"^unsupported operand type\(s\) for \*: 'Money' and",
+        ):
+            a * b  # type: ignore[operator]
+        with pytest.raises(
+            TypeError,
+            match=r"^unsupported operand type\(s\) for \*: '(\w+)' and 'Money'$",
+        ):
+            b * a  # type: ignore[operator]

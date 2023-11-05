@@ -313,21 +313,26 @@ class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
             else self.currency.overdraft_from_subunit(self.subunits)
         )
 
-    # TODO: Support precision-lossy multiplication with floats?
     @overload
-    def __mul__(self: Money[C_co], other: int) -> Money[C_co] | Overdraft[C_co]:
+    def __mul__(self, other: int) -> Self | Overdraft[C_co]:
         ...
 
     @overload
-    def __mul__(self: Money[C_co], other: Decimal) -> SubunitFraction[C_co]:
+    def __mul__(self, other: Decimal) -> SubunitFraction[C_co]:
+        ...
+
+    @overload
+    def __mul__(self, other: Fraction) -> SubunitFraction[C_co]:
         ...
 
     def __mul__(
         self,
         other: object,
-    ) -> Money[C_co] | SubunitFraction[C_co] | Overdraft[C_co]:
+    ) -> SubunitFraction[C_co] | Overdraft[C_co] | Self:
         if isinstance(other, int):
             return _dispatch_type(self.subunits * other, self.currency)
+        if isinstance(other, Fraction):
+            return SubunitFraction(self.subunits * other, self.currency)
         if isinstance(other, Decimal):
             return SubunitFraction(
                 Fraction(self.subunits) * Fraction(other),
@@ -336,17 +341,21 @@ class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
         return NotImplemented
 
     @overload
-    def __rmul__(self: Money[C_co], other: int) -> Money[C_co] | Overdraft[C_co]:
+    def __rmul__(self, other: int) -> Self | Overdraft[C_co]:
         ...
 
     @overload
-    def __rmul__(self: Money[C_co], other: Decimal) -> SubunitFraction[C_co]:
+    def __rmul__(self, other: Decimal) -> SubunitFraction[C_co]:
+        ...
+
+    @overload
+    def __rmul__(self, other: Fraction) -> SubunitFraction[C_co]:
         ...
 
     def __rmul__(
-        self: Money[C_co],
-        other: int | Decimal,
-    ) -> Money[C_co] | SubunitFraction[C_co] | Overdraft[C_co]:
+        self,
+        other: int | Decimal | Fraction,
+    ) -> SubunitFraction[C_co] | Overdraft[C_co] | Self:
         return self.__mul__(other)
 
     def __floordiv__(self: Money[C_co], other: object) -> tuple[Money[C_co], ...]:
