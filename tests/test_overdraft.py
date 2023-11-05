@@ -1,0 +1,320 @@
+from __future__ import annotations
+
+from decimal import Decimal
+from typing import Any
+
+import pytest
+from hypothesis import assume
+from hypothesis import example
+from hypothesis import given
+from hypothesis.strategies import integers
+from hypothesis.strategies import text
+
+from immoney import Currency
+from immoney import Money
+from immoney import Overdraft
+from immoney import SubunitFraction
+from immoney._base import ParsableMoneyValue
+from immoney.currencies import NOK
+from immoney.currencies import SEK
+from immoney.currencies import SEKType
+from immoney.errors import FrozenInstanceError
+from immoney.errors import InvalidOverdraftValue
+from immoney.errors import ParseError
+
+from .strategies import currencies
+from .strategies import monies
+from .strategies import overdrafts
+from .strategies import valid_money_subunits
+from .strategies import valid_overdraft_subunits
+from .strategies import valid_sek_decimals
+
+
+@given(valid_sek_decimals)
+@example(Decimal("1"))
+@example(Decimal("1.01"))
+@example(Decimal("1.010000"))
+def test_instantiation_normalizes_value(value: Decimal) -> None:
+    assume(value != 0)
+    instantiated = SEK.overdraft(value)
+    assert instantiated.decimal == value
+    assert instantiated.decimal.as_tuple().exponent == -2
+
+
+@pytest.mark.parametrize("value", (0, "0.00", Decimal(0), Decimal("0.0")))
+def test_raises_type_error_for_value_zero(value: ParsableMoneyValue) -> None:
+    with pytest.raises(
+        InvalidOverdraftValue,
+        match=(
+            r"^Overdraft cannot be instantiated with a value of zero, the Money "
+            r"class should be used instead\.$"
+        ),
+    ):
+        SEK.overdraft(value)
+
+
+def test_instantiation_caches_instance() -> None:
+    assert SEK.overdraft("1.01") is SEK.overdraft("1.010")
+    assert SEK.overdraft(1) is SEK.overdraft(1)
+
+
+def test_cannot_instantiate_subunit_fraction() -> None:
+    with pytest.raises(ParseError):
+        SEK.overdraft(Decimal("1.001"))
+
+
+def test_raises_type_error_when_instantiated_with_non_currency() -> None:
+    with pytest.raises(TypeError):
+        Overdraft("2.00", "SEK")  # type: ignore[call-overload]
+
+
+@given(money=monies(), name=text(), value=valid_sek_decimals | text())
+@example(SEK(23), "value", Decimal("123"))
+@example(NOK(23), "currency", SEK)
+def test_raises_on_assignment(money: Money[Any], name: str, value: object) -> None:
+    initial = getattr(money, name, None)
+    with pytest.raises(FrozenInstanceError):
+        setattr(money, name, value)
+    assert getattr(money, name, None) == initial
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    (
+        (SEK.overdraft(Decimal("523.12")), "Overdraft('523.12', SEK)"),
+        (SEK.overdraft(52), "Overdraft('52.00', SEK)"),
+        (SEK.overdraft(Decimal("52.13")), "Overdraft('52.13', SEK)"),
+        (SEK.overdraft("0.01"), "Overdraft('0.01', SEK)"),
+        (NOK.overdraft(8000), "Overdraft('8000.00', NOK)"),
+    ),
+)
+def test_repr(value: SubunitFraction[Any], expected: str) -> None:
+    assert expected == repr(value)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    (
+        (SEK.overdraft("523.12"), "-523.12\xa0SEK"),
+        (SEK.overdraft("52"), "-52.00\xa0SEK"),
+        (SEK.overdraft("0.01"), "-0.01\xa0SEK"),
+        (SEK.overdraft("0.49"), "-0.49\xa0SEK"),
+        (SEK.overdraft("0.99"), "-0.99\xa0SEK"),
+        (SEK.overdraft("99.99"), "-99.99\xa0SEK"),
+        (NOK.overdraft(8000), "-8000.00\xa0NOK"),
+    ),
+)
+def test_str(value: Money[Any], expected: str) -> None:
+    assert expected == str(value)
+
+
+def test_hash() -> None:
+    a = SEK.overdraft(23)
+    b = NOK.overdraft(23)
+    assert hash(a) != hash(b)
+    mapped = {a: "a", b: "b"}
+    assert mapped[a] == "a"
+    assert mapped[b] == "b"
+    assert {a, a, b} == {a, b, b}
+    assert hash(SEK.overdraft(13)) == hash(SEK.overdraft(13))
+
+
+@given(overdrafts())
+def test_abs_returns_money(value: Overdraft[Any]) -> None:
+    assert abs(value) is value.currency.from_subunit(value.subunits)
+
+
+@given(overdrafts())
+def test_neg_returns_money(value: Overdraft[Any]) -> None:
+    assert -value is value.currency.from_subunit(value.subunits)
+
+
+@given(overdrafts())
+def test_pos_returns_self(value: Overdraft[Any]) -> None:
+    assert value is +value
+
+
+def test_can_check_equality_with_zero() -> None:
+    assert SEK.overdraft("0.01") != 0
+    assert 0 != SEK.overdraft("0.01")
+    assert NOK.overdraft("0.01") != 0
+    assert 0 != NOK.overdraft("0.01")
+
+
+@given(value=overdrafts(), number=integers(min_value=1))
+@example(SEK(1), 1)
+@example(SEK("0.1"), 1)
+@example(SEK("0.01"), 1)
+def test_equality_with_non_zero_is_always_false(
+    value: Overdraft[Any],
+    number: int,
+) -> None:
+    assert value != number
+
+
+@given(money_value=monies(), overdraft_value=overdrafts())
+@example(SEK(1), SEK.overdraft(1))
+def test_equality_with_money_is_always_false(
+    money_value: Money[Any],
+    overdraft_value: Overdraft[Any],
+) -> None:
+    assert money_value != overdraft_value
+    assert overdraft_value != money_value
+
+
+@given(valid_overdraft_subunits, valid_overdraft_subunits)
+@example(1, 1)
+def test_can_add_instances(x: int, y: int) -> None:
+    a = SEK.overdraft_from_subunit(x)
+    b = SEK.overdraft_from_subunit(y)
+
+    # Test commutative property.
+    c = b + a
+    assert isinstance(c, Overdraft)
+    d = a + b
+    assert isinstance(d, Overdraft)
+    assert c == d
+    assert c.subunits == d.subunits == x + y
+
+
+@given(valid_overdraft_subunits, valid_overdraft_subunits)
+@example(1, 1)
+def test_adding_instances_of_different_currency_raises_type_error(
+    x: int,
+    y: int,
+) -> None:
+    a = SEK.overdraft(x)
+    b = NOK.overdraft(y)
+    with pytest.raises(TypeError):
+        a + b  # type: ignore[operator]
+    with pytest.raises(TypeError):
+        b + a  # type: ignore[operator]
+
+
+@given(valid_overdraft_subunits, valid_money_subunits)
+def test_adding_money_equals_subtraction(x: int, y: int) -> None:
+    assume(x != 0)
+    a = SEK.overdraft_from_subunit(x)
+    b = SEK.from_subunit(y)
+    assert abs(a + b).subunits == abs(b + a).subunits == abs(x - y)
+
+
+def test_can_add_money() -> None:
+    a = SEK.from_subunit(1000)
+    b = SEK.overdraft_from_subunit(600)
+    positive_sum = a + b
+    assert isinstance(positive_sum, Money)
+    assert positive_sum.decimal == Decimal("4.00")
+    assert positive_sum.subunits == 400
+    assert positive_sum == b + a
+
+    c = SEK.from_subunit(600)
+    d = SEK.overdraft_from_subunit(1000)
+    negative_sum = c + d
+    assert isinstance(negative_sum, Overdraft)
+    assert negative_sum.decimal == Decimal("4.00")
+    assert negative_sum.subunits == 400
+    assert negative_sum == d + c
+
+
+@given(valid_money_subunits, valid_overdraft_subunits)
+@example(0, 1)
+def test_adding_money_of_different_currency_raises_type_error(
+    x: int,
+    y: int,
+) -> None:
+    a = SEK(x)
+    assume(y != 0)
+    b = NOK.overdraft(y)
+    with pytest.raises(TypeError):
+        a + b  # type: ignore[operator]
+    with pytest.raises(TypeError):
+        b + a  # type: ignore[operator]
+
+
+@pytest.mark.parametrize(
+    "value", (object(), 0, 1, 0.0, 2.3, Decimal("0.0"), Decimal(3), [], ())
+)
+def test_cannot_add_arbitrary_object(value: object) -> None:
+    with pytest.raises(TypeError):
+        SEK.overdraft(1) + value  # type: ignore[operator]
+
+    with pytest.raises(TypeError):
+        value + SEK.overdraft(1)  # type: ignore[operator]
+
+
+@given(valid_overdraft_subunits, valid_overdraft_subunits)
+@example(1, 1)
+def test_can_subtract_instances(x: int, y: int) -> None:
+    a = SEK.overdraft_from_subunit(x)
+    b = SEK.overdraft_from_subunit(y)
+    assert abs(b - a).subunits == abs(a - b).subunits == abs(x - y)
+
+
+@given(valid_overdraft_subunits, valid_overdraft_subunits)
+@example(1, 1)
+def test_subtracting_instances_of_different_currency_raises_type_error(
+    x: int,
+    y: int,
+) -> None:
+    a = SEK.overdraft_from_subunit(x)
+    b = NOK.overdraft_from_subunit(y)
+    with pytest.raises(TypeError):
+        a - b  # type: ignore[operator]
+    with pytest.raises(TypeError):
+        b - a  # type: ignore[operator]
+
+
+@given(valid_overdraft_subunits, valid_money_subunits)
+@example(1, 0)
+def test_subtracting_money_equals_addition(x: int, y: int) -> None:
+    a = SEK.overdraft_from_subunit(x)
+    b = SEK.from_subunit(y)
+    assert abs(a - b).subunits == abs(b - a).subunits == abs(x + y)
+
+
+@pytest.mark.parametrize(
+    "a, b, expected_difference",
+    [
+        (SEK(1000), SEK.overdraft(600), SEK(1600)),
+        (SEK(600), SEK.overdraft(1000), SEK(1600)),
+        (SEK.overdraft(600), SEK(1000), SEK.overdraft(1600)),
+        (SEK.overdraft(1000), SEK(600), SEK.overdraft(1600)),
+    ],
+)
+def test_can_subtract_money(
+    a: Money[SEKType] | Overdraft[SEKType],
+    b: Money[SEKType] | Overdraft[SEKType],
+    expected_difference: Money[SEKType] | Overdraft[SEKType],
+) -> None:
+    assert a - b == expected_difference
+
+
+@given(valid_money_subunits, valid_overdraft_subunits)
+def test_subtracting_money_of_different_currency_raises_type_error(
+    x: int,
+    y: int,
+) -> None:
+    a = SEK(x)
+    b = NOK.overdraft(y)
+    with pytest.raises(TypeError):
+        a - b  # type: ignore[operator]
+    with pytest.raises(TypeError):
+        b - a  # type: ignore[operator]
+
+
+@pytest.mark.parametrize(
+    "value", (object(), 0, 1, 0.0, 2.3, Decimal("0.0"), Decimal(3), [], ())
+)
+def test_cannot_subtract_arbitrary_object(value: object) -> None:
+    with pytest.raises(TypeError):
+        SEK.overdraft(1) - value  # type: ignore[operator]
+
+    with pytest.raises(TypeError):
+        value - SEK.overdraft(1)  # type: ignore[operator]
+
+
+@given(currencies(), integers(min_value=1))
+@example(SEK, 1)
+def test_subunit_roundtrip(currency: Currency, value: int) -> None:
+    assert value == Overdraft.from_subunit(value, currency).subunits
