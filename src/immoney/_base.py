@@ -115,10 +115,31 @@ class Currency(Frozen, abc.ABC):
     def one_subunit(self) -> Money[Self]:
         return self.from_subunit(1)
 
+    @overload
+    def fraction(
+        self,
+        a: int,
+        b: int,
+        /,
+    ) -> SubunitFraction[Self]:
+        ...
+
+    @overload
     def fraction(
         self,
         subunit_value: Fraction | Decimal | int,
     ) -> SubunitFraction[Self]:
+        ...
+
+    def fraction(
+        self,
+        subunit_value: Fraction | Decimal | int,
+        denominator: int | None = None,
+    ) -> SubunitFraction[Self]:
+        if denominator is not None:
+            if not isinstance(subunit_value, int):
+                raise TypeError("Incorrect signature for Currency.fraction()")
+            return SubunitFraction(Fraction(subunit_value, denominator), self)
         return SubunitFraction(subunit_value, self)
 
     def overdraft(self: Self, value: ParsableMoneyValue) -> Overdraft[Self]:
@@ -483,6 +504,22 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
 
     def __rsub__(self, other: Money[C_co] | Overdraft[C_co]) -> Self:
         return self.__sub__(-other)
+
+    @overload
+    def __mul__(self, other: int) -> Self:
+        ...
+
+    @overload
+    def __mul__(self, other: Fraction) -> Self:
+        ...
+
+    def __mul__(self, other: object) -> Self:
+        if isinstance(other, (int, Fraction)):
+            return SubunitFraction(self.value * other, self.currency)
+        return NotImplemented
+
+    def __rmul__(self, other: int | Fraction) -> Self:
+        return self.__mul__(other)
 
     @classmethod
     def from_money(

@@ -323,3 +323,53 @@ class TestSub:
             ),
         ):
             b - a  # type: ignore[operator]
+
+
+class TestMul:
+    @pytest.mark.parametrize(
+        ("a", "b", "expected"),
+        [
+            (SEK.fraction(3, 4), 2, SEK.fraction(3, 2)),
+            (SEK.fraction(3, 4), Fraction(1, 3), SEK.fraction(1, 4)),
+        ],
+    )
+    def test_can_multiply(
+        self,
+        a: SubunitFraction[SEKType],
+        b: int | Fraction,
+        expected: SubunitFraction[SEKType],
+    ) -> None:
+        assert_type(a * b, SubunitFraction[SEKType])
+        assert_type(b * a, SubunitFraction[SEKType])
+        assert a * b == expected
+        assert b * a == expected
+
+    @pytest.mark.parametrize(
+        ("a", "b"),
+        (
+            (
+                SubunitFraction(Fraction(997, 3), SEK),
+                SubunitFraction(Fraction(997, 3), SEK),
+            ),
+            (SubunitFraction(Fraction(997, 3), SEK), SEK(1)),
+            (SubunitFraction(Fraction(997, 3), SEK), SEK.overdraft(1)),
+            (SubunitFraction(Fraction(997, 3), SEK), object()),
+        ),
+    )
+    def test_raises_type_error_for_invalid_other(
+        self,
+        a: SubunitFraction[Currency],
+        b: object,
+    ) -> None:
+        with pytest.raises(
+            TypeError,
+            match=r"^unsupported operand type\(s\) for \*: 'SubunitFraction' and",
+        ):
+            a * b  # type: ignore[operator]
+        with pytest.raises(
+            TypeError,
+            match=(
+                r"^unsupported operand type\(s\) for \*: '(\w+)' and 'SubunitFraction'$"
+            ),
+        ):
+            b * a  # type: ignore[operator]

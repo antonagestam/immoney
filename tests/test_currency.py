@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from fractions import Fraction
 from typing import Final
 
 import pytest
@@ -14,6 +15,7 @@ from hypothesis.strategies import text
 from immoney import Currency
 from immoney import Money
 from immoney import Overdraft
+from immoney._base import SubunitFraction
 from immoney._base import valid_subunit
 from immoney.currencies import SEK
 from immoney.errors import FrozenInstanceError
@@ -133,3 +135,35 @@ def test_overdraft_from_subunit_returns_overdraft_instance() -> None:
     assert instance.subunits == 100
     assert instance.decimal == Decimal("1.00")
     assert instance.currency is SEK
+
+
+class TestFraction:
+    def test_raises_type_error_for_incorrect_signature(self) -> None:
+        with pytest.raises(
+            TypeError, match=r"^Incorrect signature for Currency.fraction\(\)$"
+        ):
+            SEK.fraction(Fraction(1, 2), 1)  # type: ignore[call-overload]
+
+    def test_can_construct_fraction_from_ints(self) -> None:
+        value = SEK.fraction(2, 1)
+        assert isinstance(value, SubunitFraction)
+        assert value.value.numerator == 2
+        assert value.value.denominator == 1
+        assert value.currency is SEK
+
+    @pytest.mark.parametrize(
+        ("subunit_value", "expected_fraction"),
+        (
+            (1, Fraction(1)),
+            (Decimal("1.5"), Fraction(3, 2)),
+            (Fraction(11, 3), Fraction(11, 3)),
+        ),
+    )
+    def test_can_construct_fraction_from_single_value(
+        self,
+        subunit_value: int | Decimal | Fraction,
+        expected_fraction: Fraction,
+    ) -> None:
+        value = SEK.fraction(subunit_value)
+        assert value.value == expected_fraction
+        assert value.currency is SEK
