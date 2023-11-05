@@ -521,6 +521,32 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
     def __rmul__(self, other: int | Fraction) -> Self:
         return self.__mul__(other)
 
+    @overload
+    def __truediv__(self, other: int) -> Self:
+        ...
+
+    @overload
+    def __truediv__(self, other: Fraction) -> Self:
+        ...
+
+    def __truediv__(self, other: object) -> Self:
+        if isinstance(other, (int, Fraction)):
+            return SubunitFraction(self.value / other, self.currency)
+        return NotImplemented
+
+    @overload
+    def __rtruediv__(self, other: int) -> Self:
+        ...
+
+    @overload
+    def __rtruediv__(self, other: Fraction) -> Self:
+        ...
+
+    def __rtruediv__(self, other: object) -> Self:
+        if isinstance(other, (int, Fraction)):
+            return SubunitFraction(other / self.value, self.currency)
+        return NotImplemented
+
     @classmethod
     def from_money(
         cls,
