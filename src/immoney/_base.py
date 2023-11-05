@@ -469,6 +469,21 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
     def __radd__(self, other: Money[C_co] | Overdraft[C_co]) -> Self:
         return self.__add__(other)
 
+    def __sub__(
+        self,
+        other: SubunitFraction[C_co] | Money[C_co] | Overdraft[C_co],
+    ) -> Self:
+        if isinstance(other, SubunitFraction) and self.currency == other.currency:
+            return SubunitFraction(self.value - other.value, self.currency)
+        if isinstance(other, Money) and self.currency == other.currency:
+            return SubunitFraction(self.value - other.subunits, self.currency)
+        if isinstance(other, Overdraft) and self.currency == other.currency:
+            return SubunitFraction(self.value + other.subunits, self.currency)
+        return NotImplemented
+
+    def __rsub__(self, other: Money[C_co] | Overdraft[C_co]) -> Self:
+        return self.__sub__(-other)
+
     @classmethod
     def from_money(
         cls,

@@ -253,3 +253,73 @@ class TestAdd:
             ),
         ):
             b + a  # type: ignore[operator]
+
+
+class TestSub:
+    @pytest.mark.parametrize(
+        ("a", "b", "expected"),
+        [
+            (
+                SubunitFraction(Fraction(3, 4), SEK),
+                SubunitFraction(Fraction(1, 2), SEK),
+                SubunitFraction(Fraction(1, 4), SEK),
+            ),
+            (
+                SubunitFraction(Fraction(16988, 51), SEK),
+                SubunitFraction(Fraction(997, 3), SEK),
+                SubunitFraction(Fraction(13, 17), SEK),
+            ),
+            (
+                SubunitFraction(Fraction(1000, 3), SEK),
+                SEK("0.01"),
+                SubunitFraction(Fraction(997, 3), SEK),
+            ),
+            (
+                SubunitFraction(Fraction(994, 3), SEK),
+                SEK.overdraft("0.01"),
+                SubunitFraction(Fraction(997, 3), SEK),
+            ),
+        ],
+    )
+    def test_can_subtract(
+        self,
+        a: SubunitFraction[SEKType],
+        b: SubunitFraction[SEKType] | Money[SEKType] | Overdraft[SEKType],
+        expected: SubunitFraction[SEKType],
+    ) -> None:
+        c = a - b
+        assert_type(c, SubunitFraction[SEKType])
+        assert c == expected
+
+        assert_type(a - c, SubunitFraction[SEKType])
+        assert a - c == b
+
+    @pytest.mark.parametrize(
+        ("a", "b"),
+        (
+            (
+                SubunitFraction(Fraction(997, 3), SEK),
+                SubunitFraction(Fraction(997, 3), NOK),
+            ),
+            (SubunitFraction(Fraction(997, 3), SEK), NOK(1)),
+            (SubunitFraction(Fraction(997, 3), SEK), NOK.overdraft(1)),
+            (SubunitFraction(Fraction(997, 3), SEK), 1),
+        ),
+    )
+    def test_raises_type_error_for_invalid_other(
+        self,
+        a: SubunitFraction[Currency],
+        b: object,
+    ) -> None:
+        with pytest.raises(
+            TypeError,
+            match=r"^unsupported operand type\(s\) for \-: 'SubunitFraction' and",
+        ):
+            a - b  # type: ignore[operator]
+        with pytest.raises(
+            TypeError,
+            match=(
+                r"^unsupported operand type\(s\) for \-: '(\w+)' and 'SubunitFraction'$"
+            ),
+        ):
+            b - a  # type: ignore[operator]
