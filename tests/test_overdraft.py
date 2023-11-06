@@ -9,6 +9,7 @@ from hypothesis import assume
 from hypothesis import example
 from hypothesis import given
 from hypothesis.strategies import integers
+from hypothesis.strategies import just
 from hypothesis.strategies import text
 from typing_extensions import assert_type
 
@@ -120,6 +121,96 @@ def test_hash() -> None:
     assert mapped[b] == "b"
     assert {a, a, b} == {a, b, b}
     assert hash(SEK.overdraft(13)) == hash(SEK.overdraft(13))
+
+
+class TestOrdering:
+    def test_can_check_equality_with_zero(self) -> None:
+        assert SEK.overdraft("0.01") != 0
+        assert 0 != SEK.overdraft("0.01")
+        assert NOK.overdraft("0.01") != 0
+        assert 0 != NOK.overdraft("0.01")
+
+    @given(value=overdrafts(), number=integers(min_value=1))
+    @example(SEK.overdraft(1), 1)
+    @example(SEK.overdraft("0.1"), 1)
+    @example(SEK.overdraft("0.01"), 1)
+    def test_cannot_check_equality_with_non_zero(
+        self,
+        value: Overdraft[Currency],
+        number: int,
+    ) -> None:
+        assert value != number
+
+    @given(value=valid_overdraft_subunits)
+    def test_can_check_equality_with_instance(self, value: int) -> None:
+        instance = SEK.overdraft_from_subunit(value)
+        assert instance == SEK.overdraft_from_subunit(value)
+        next_plus = SEK.overdraft_from_subunit(instance.subunits + 1)
+        assert next_plus != value
+        assert value != next_plus
+
+        other_currency = NOK.overdraft_from_subunit(value)
+        assert other_currency != instance
+        assert instance != other_currency
+        assert other_currency != next_plus
+        assert next_plus != other_currency
+
+    @given(a=overdrafts(), b=overdrafts())
+    @example(NOK.overdraft(1), SEK.overdraft(1))
+    @example(SEK.overdraft(1), NOK.overdraft(1))
+    @example(SEK.overdraft(10), NOK.overdraft(10))
+    def test_never_equal_across_currencies(
+        self,
+        a: Overdraft[Currency],
+        b: Overdraft[Currency],
+    ) -> None:
+        assert a != b
+
+    @given(valid_overdraft_subunits, valid_overdraft_subunits)
+    @example(1, 1)
+    @example(2, 1)
+    @example(1, 2)
+    def test_total_ordering_within_currency(self, x: int, y: int) -> None:
+        a = SEK.overdraft_from_subunit(x)
+        b = SEK.overdraft_from_subunit(y)
+        assert (a > b and b < a) or (a < b and b > a) or (a == b and b == a)
+        assert (a >= b and b <= a) or (a <= b and b >= a)
+
+    @given(a=overdrafts(), b=overdrafts() | monies())
+    @example(NOK.overdraft(1), SEK.overdraft(1))
+    @example(SEK.overdraft(1), NOK.overdraft(2))
+    def test_raises_type_error_for_ordering_across_currencies(
+        self,
+        a: Overdraft[Currency],
+        b: Overdraft[Currency] | Money[Currency],
+    ) -> None:
+        with pytest.raises(TypeError):
+            a > b  # noqa: B015
+        with pytest.raises(TypeError):
+            a >= b  # noqa: B015
+        with pytest.raises(TypeError):
+            a < b  # noqa: B015
+        with pytest.raises(TypeError):
+            a <= b  # noqa: B015
+        with pytest.raises(TypeError):
+            b > a  # noqa: B015
+        with pytest.raises(TypeError):
+            b >= a  # noqa: B015
+        with pytest.raises(TypeError):
+            b < a  # noqa: B015
+        with pytest.raises(TypeError):
+            b <= a  # noqa: B015
+
+    @given(monies(currencies=just(SEK)), overdrafts(currencies=just(SEK)))
+    def test_always_strictly_less_than_money(
+        self,
+        money: Money[SEKType],
+        overdraft: Overdraft[SEKType],
+    ) -> None:
+        assert money > overdraft
+        assert money >= overdraft
+        assert not (money < overdraft)
+        assert not (money <= overdraft)
 
 
 @given(overdrafts())

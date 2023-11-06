@@ -672,6 +672,34 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
             return self.currency == other.currency and self.subunits == other.subunits
         return NotImplemented
 
+    def __gt__(self: Overdraft[C_co], other: Overdraft[C_co] | Money[C_co]) -> bool:
+        if isinstance(other, Overdraft) and self.currency == other.currency:
+            return self.subunits > other.subunits
+        if isinstance(other, Money) and self.currency == other.currency:
+            return False
+        return NotImplemented
+
+    def __ge__(self: Overdraft[C_co], other: Overdraft[C_co] | Money[C_co]) -> bool:
+        if isinstance(other, Overdraft) and self.currency == other.currency:
+            return self.subunits >= other.subunits
+        if isinstance(other, Money) and self.currency == other.currency:
+            return False
+        return NotImplemented
+
+    def __lt__(self: Overdraft[C_co], other: Overdraft[C_co] | Money[C_co]) -> bool:
+        if isinstance(other, Overdraft) and self.currency == other.currency:
+            return self.subunits < other.subunits
+        if isinstance(other, Money) and self.currency == other.currency:
+            return True
+        return NotImplemented
+
+    def __le__(self: Overdraft[C_co], other: Overdraft[C_co] | Money[C_co]) -> bool:
+        if isinstance(other, Overdraft) and self.currency == other.currency:
+            return self.subunits <= other.subunits
+        if isinstance(other, Money) and self.currency == other.currency:
+            return True
+        return NotImplemented
+
     @overload
     def __add__(
         self: Overdraft[C_co],
