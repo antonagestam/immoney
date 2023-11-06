@@ -176,6 +176,26 @@ class TestOrdering:
         assert (a > b and b < a) or (a < b and b > a) or (a == b and b == a)
         assert (a >= b and b <= a) or (a <= b and b >= a)
 
+    def test_ordering_of_non_equals(self) -> None:
+        a = SEK.overdraft(2)
+        b = SEK.overdraft(1)
+        assert a < b
+        assert a <= b
+        assert not (a > b)
+        assert not (a >= b)
+        assert b > a
+        assert b >= a
+        assert not (b < a)
+        assert not (b <= a)
+
+    def test_ordering_of_equals(self) -> None:
+        a = SEK.overdraft(1)
+        b = SEK.overdraft(1)
+        assert not a < b
+        assert not a > b
+        assert a <= b
+        assert a >= b
+
     @given(a=overdrafts(), b=overdrafts() | monies())
     @example(NOK.overdraft(1), SEK.overdraft(1))
     @example(SEK.overdraft(1), NOK.overdraft(2))
