@@ -809,6 +809,36 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
     ) -> Money[C_co] | SubunitFraction[C_co] | Self:
         return self.__mul__(other)
 
+    def __floordiv__(self, other: object) -> tuple[Self | Money[C_co], ...]:
+        """
+        Divides the original value over the numerator and returns a tuple of new
+        Overdraft instances where the original value is spread as evenly as possible.
+        The sum of the returned values will always equal the original value.
+
+        Note that, because Overdraft cannot have a value of zero, this operation can
+        return Money values. This only happens when a resulting chunk must equal zero.
+        """
+        if not isinstance(other, int):
+            return NotImplemented
+
+        over: Self | Money[C_co]
+
+        try:
+            over = self.currency.overdraft_from_subunit(self.subunits // other)
+        except ZeroDivisionError as e:
+            raise DivisionByZero from e
+        except InvalidOverdraftValue:
+            over = self.currency.from_subunit(0)
+
+        under_subunit = over.subunits
+        remainder = self.subunits - under_subunit * other
+        under = self.currency.overdraft_from_subunit(under_subunit + 1)
+
+        return (
+            *(over for _ in range(other - remainder)),
+            *(under for _ in range(remainder)),
+        )
+
     @overload
     def __truediv__(self, other: int) -> SubunitFraction[C_co]:
         ...

@@ -553,3 +553,52 @@ class TestTruediv:
     def test_raises_division_by_zero(self) -> None:
         with pytest.raises(DivisionByZero):
             SEK.overdraft(1) / 0
+
+
+class TestFloordiv:
+    @pytest.mark.parametrize("value", [object(), 1.0, "", {}])
+    def test_raises_type_error_for_invalid_denominator(self, value: object) -> None:
+        with pytest.raises(TypeError):
+            SEK.overdraft(1) // value
+
+    # This test is mostly here to enable the assert_type.
+    def test_can_floordiv(self) -> None:
+        value = SEK.overdraft("9.49")
+        first, second = value // 2
+
+        assert_type(first, Overdraft[SEKType] | Money[SEKType])
+        assert isinstance(first, Overdraft)
+        assert first.subunits == 474
+        assert first.currency == SEK
+
+        assert_type(second, Overdraft[SEKType] | Money[SEKType])
+        assert isinstance(second, Overdraft)
+        assert second.subunits == 475
+        assert second.currency == SEK
+
+    @given(overdrafts(), integers(min_value=1, max_value=500))
+    def test_returns_evenly_divided_parts(
+        self,
+        dividend: Overdraft[Currency],
+        divisor: int,
+    ) -> None:
+        currency = dividend.currency
+        quotient = dividend // divisor
+
+        # The number of parts the value is divided among is equal to divisor.
+        assert len(quotient) == divisor
+        # The sum of all the returned parts are equal to the dividend.
+        assert sum(quotient, currency.zero) == dividend
+        # The returned parts differ at most by 1 subunit.
+        assert max(quotient) - min(quotient) in (currency.zero, currency.one_subunit)
+        # The returned parts are sorted in descending order.
+        assert sorted(quotient, reverse=True) == list(quotient)
+
+    @given(overdrafts())
+    def test_raises_division_by_zero_on_floordiv_with_zero(
+        self,
+        value: Overdraft[Currency],
+    ) -> None:
+        non_zero = value + value.currency.one_subunit
+        with pytest.raises(DivisionByZero):
+            non_zero // 0
