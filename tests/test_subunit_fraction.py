@@ -20,7 +20,12 @@ from immoney.currencies import SEK
 from immoney.currencies import SEKType
 from immoney.errors import ParseError
 
+from .strategies import SEKMonetary
+from .strategies import currencies
 from .strategies import monies
+from .strategies import overdrafts
+from .strategies import sek_monetaries
+from .strategies import subunit_fractions
 
 
 def test_init_normalizes_value() -> None:
@@ -122,6 +127,60 @@ def test_equality() -> None:
     assert zero != overdraft_one
     assert overdraft_one != -different_one
     assert different_one != -overdraft_one
+
+
+@given(monies())
+def test_compares_equal_to_same_currency_money(money: Money[Currency]) -> None:
+    fraction = money.currency.fraction(money.subunits)
+    assert fraction == money
+    assert money == fraction
+    assert fraction >= money
+    assert fraction <= money
+    assert money >= fraction
+    assert money <= fraction
+
+
+@given(overdrafts())
+def test_compares_equal_to_same_currency_overdraft(
+    overdraft: Overdraft[Currency],
+) -> None:
+    fraction = overdraft.currency.fraction(-overdraft.subunits)
+    assert fraction == overdraft
+    assert overdraft == fraction
+    assert fraction >= overdraft
+    assert fraction <= overdraft
+    assert overdraft >= fraction
+    assert overdraft <= fraction
+
+
+@given(monies(), currencies())
+def test_compares_unequal_to_differing_currency_money(
+    money: Money[Currency],
+    currency: Currency,
+) -> None:
+    fraction = currency.fraction(money.subunits)
+    assert fraction != money
+    assert money != fraction
+
+
+@given(monies(), currencies())
+def test_compares_unequal_to_differing_currency_overdraft(
+    overdraft: Overdraft[Currency],
+    currency: Currency,
+) -> None:
+    fraction = currency.fraction(overdraft.subunits)
+    assert fraction != overdraft
+    assert overdraft != fraction
+
+
+def test_compares_unequal_across_values() -> None:
+    fraction = SEK.fraction(99, 100)
+    money = SEK(1)
+    assert fraction != money
+    assert money != fraction
+    overdraft = SEK.overdraft(1)
+    assert fraction != overdraft
+    assert overdraft != fraction
 
 
 def test_from_money_returns_instance() -> None:
@@ -434,3 +493,61 @@ class TestTruediv:
             ),
         ):
             b / a  # type: ignore[operator]
+
+
+class TestOrdering:
+    @given(sek_monetaries, sek_monetaries)
+    def test_total_ordering_within_currency(
+        self, a: SEKMonetary, b: SEKMonetary
+    ) -> None:
+        assert (a > b and b < a) or (a < b and b > a) or (a == b and b == a)
+        assert (a >= b and b <= a) or (a <= b and b >= a)
+
+    @pytest.mark.parametrize(
+        ("larger", "smaller"),
+        [
+            (SEK.fraction(0), SEK.overdraft_from_subunit(1)),
+            (SEK.overdraft_from_subunit(1), SEK.fraction(-2)),
+            (SEK.fraction(1), SEK.zero),
+            (SEK.zero, SEK.fraction(-1)),
+            (SEK(1), SEK.fraction(1, 2)),
+        ],
+    )
+    def test_all_ordering_combinations(
+        self,
+        larger: SubunitFraction[Currency] | Overdraft[Currency] | Money[Currency],
+        smaller: SubunitFraction[Currency] | Overdraft[Currency] | Money[Currency],
+    ) -> None:
+        assert larger > smaller
+        assert not larger < smaller
+        assert larger >= smaller
+        assert not larger <= smaller
+        assert smaller < larger
+        assert not smaller > larger
+        assert smaller <= larger
+        assert not smaller >= larger
+
+    @given(a=subunit_fractions(), b=overdrafts() | monies() | subunit_fractions())
+    @example(NOK.fraction(1), SEK.fraction(1))
+    @example(SEK.fraction(1), NOK.fraction(2))
+    def test_raises_type_error_for_ordering_across_currencies(
+        self,
+        a: SubunitFraction[Currency],
+        b: SubunitFraction[Currency] | Overdraft[Currency] | Money[Currency],
+    ) -> None:
+        with pytest.raises(TypeError):
+            a > b  # noqa: B015
+        with pytest.raises(TypeError):
+            a >= b  # noqa: B015
+        with pytest.raises(TypeError):
+            a < b  # noqa: B015
+        with pytest.raises(TypeError):
+            a <= b  # noqa: B015
+        with pytest.raises(TypeError):
+            b > a  # noqa: B015
+        with pytest.raises(TypeError):
+            b >= a  # noqa: B015
+        with pytest.raises(TypeError):
+            b < a  # noqa: B015
+        with pytest.raises(TypeError):
+            b <= a  # noqa: B015
