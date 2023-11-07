@@ -498,6 +498,42 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
             return self.value == -other.subunits
         return NotImplemented
 
+    def __gt__(self, other: Self | Money[C_co] | Overdraft[C_co]) -> bool:
+        if isinstance(other, SubunitFraction) and self.currency == other.currency:
+            return self.value > other.value
+        if isinstance(other, Money) and self.currency == other.currency:
+            return self.value > other.subunits
+        if isinstance(other, Overdraft) and self.currency == other.currency:
+            return self.value > -other.subunits
+        return NotImplemented
+
+    def __ge__(self, other: Self | Money[C_co] | Overdraft[C_co]) -> bool:
+        if isinstance(other, SubunitFraction) and self.currency == other.currency:
+            return self.value >= other.value
+        if isinstance(other, Money) and self.currency == other.currency:
+            return self.value >= other.subunits
+        if isinstance(other, Overdraft) and self.currency == other.currency:
+            return self.value >= -other.subunits
+        return NotImplemented
+
+    def __lt__(self, other: Self | Money[C_co] | Overdraft[C_co]) -> bool:
+        if isinstance(other, SubunitFraction) and self.currency == other.currency:
+            return self.value < other.value
+        if isinstance(other, Money) and self.currency == other.currency:
+            return self.value < other.subunits
+        if isinstance(other, Overdraft) and self.currency == other.currency:
+            return self.value < -other.subunits
+        return NotImplemented
+
+    def __le__(self, other: Self | Money[C_co] | Overdraft[C_co]) -> bool:
+        if isinstance(other, SubunitFraction) and self.currency == other.currency:
+            return self.value <= other.value
+        if isinstance(other, Money) and self.currency == other.currency:
+            return self.value <= other.subunits
+        if isinstance(other, Overdraft) and self.currency == other.currency:
+            return self.value <= -other.subunits
+        return NotImplemented
+
     def __neg__(self) -> SubunitFraction[C_co]:
         return SubunitFraction(-self.value, self.currency)
 

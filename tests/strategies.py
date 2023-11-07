@@ -2,16 +2,22 @@ from __future__ import annotations
 
 import random
 from typing import Final
+from typing import TypeAlias
 
 from hypothesis.strategies import composite
 from hypothesis.strategies import decimals
+from hypothesis.strategies import fractions
 from hypothesis.strategies import integers
+from hypothesis.strategies import just
 from hypothesis.strategies import text
 
 from immoney import Currency
 from immoney import Money
 from immoney._base import Overdraft
+from immoney._base import SubunitFraction
 from immoney._base import valid_subunit
+from immoney.currencies import SEK
+from immoney.currencies import SEKType
 
 valid_sek_decimals: Final = decimals(
     min_value=0,
@@ -53,3 +59,20 @@ def overdrafts(
     subunits=integers(min_value=1),
 ) -> Overdraft[Currency]:
     return Overdraft.from_subunit(draw(subunits), draw(currencies))
+
+
+@composite
+def subunit_fractions(
+    draw,
+    currencies=currencies(),
+    subunits=fractions(),
+) -> SubunitFraction[Currency]:
+    return SubunitFraction(draw(subunits), draw(currencies))
+
+
+sek_monetaries: Final = (
+    subunit_fractions(currencies=just(SEK))
+    | monies(currencies=just(SEK))
+    | overdrafts(currencies=just(SEK))
+)
+SEKMonetary: TypeAlias = Money[SEKType] | Overdraft[SEKType] | SubunitFraction[SEKType]
