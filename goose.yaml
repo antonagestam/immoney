@@ -28,12 +28,14 @@ environments:
       - prettier
 
 hooks:
-  - id: check-manifest
-    environment: check-manifest
-    command: check-manifest
-    parameterize: false
-    read_only: true
-    args: [--no-build-isolation]
+  # Commented out until there's a fix for pinning setuptools.
+  # https://github.com/antonagestam/goose/issues/30
+  # - id: check-manifest
+  #   environment: check-manifest
+  #   command: check-manifest
+  #   parameterize: false
+  #   read_only: true
+  #   args: [--no-build-isolation]
 
   - id: prettier
     environment: node
