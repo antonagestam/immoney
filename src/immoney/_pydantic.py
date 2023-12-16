@@ -46,7 +46,7 @@ def extract_currency_type_arg(source_type: type) -> type[Currency]:
         case (TypeVar(__bound__=type() as currency_type),) if issubclass(currency_type, Currency):
             return currency_type
         # TypeVar without bound.
-        case (TypeVar(__bound__=None,):
+        case (TypeVar(__bound__=None),):
             return Currency
         case invalid:  # pragma: no cover
             raise TypeError(f"Invalid type args: {invalid!r}.")
