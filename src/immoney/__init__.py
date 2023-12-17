@@ -13,4 +13,3 @@ __all__ = (
     "Overdraft",
     "ParsableMoneyValue",
 )
-__version__ = "0.8.0"
