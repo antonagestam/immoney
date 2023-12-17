@@ -10,7 +10,6 @@ from typing import TypeVar
 from typing import get_args
 
 from pydantic_core import core_schema
-from pydantic_core.core_schema import GeneralValidatorFunction
 
 from . import Currency
 from . import Money
@@ -86,12 +85,14 @@ class GenericCurrencyAdapter(Protocol[T_contra, U_co]):
     @abc.abstractmethod
     def validator_from_registry(
         registry: CurrencyRegistry[Currency],
-    ) -> GeneralValidatorFunction:
+    ) -> core_schema.WithInfoValidatorFunction:
         ...
 
     @staticmethod
     @abc.abstractmethod
-    def validator_from_currency(currency: Currency) -> GeneralValidatorFunction:
+    def validator_from_currency(
+        currency: Currency,
+    ) -> core_schema.WithInfoValidatorFunction:
         ...
 
 
@@ -124,7 +125,7 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
     @staticmethod
     def validator_from_registry(
         registry: CurrencyRegistry[C],
-    ) -> GeneralValidatorFunction:
+    ) -> core_schema.WithInfoValidatorFunction:
         def validate_money(
             value: MoneyDict | Money[Currency],
             *args: object,
@@ -140,7 +141,9 @@ class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):
         return validate_money
 
     @staticmethod
-    def validator_from_currency(currency: Currency) -> GeneralValidatorFunction:
+    def validator_from_currency(
+        currency: Currency,
+    ) -> core_schema.WithInfoValidatorFunction:
         def validate_money(
             value: MoneyDict | Money[Currency],
             *args: object,
@@ -200,7 +203,7 @@ class SubunitFractionAdapter(
     @staticmethod
     def validator_from_registry(
         registry: CurrencyRegistry[C],
-    ) -> GeneralValidatorFunction:
+    ) -> core_schema.WithInfoValidatorFunction:
         def validate_subunit_fraction(
             value: SubunitFractionDict | SubunitFraction[Currency],
             *args: object,
@@ -217,7 +220,9 @@ class SubunitFractionAdapter(
         return validate_subunit_fraction
 
     @staticmethod
-    def validator_from_currency(currency: Currency) -> GeneralValidatorFunction:
+    def validator_from_currency(
+        currency: Currency,
+    ) -> core_schema.WithInfoValidatorFunction:
         def validate_subunit_fraction(
             value: SubunitFractionDict | SubunitFraction[Currency],
             *args: object,
@@ -268,7 +273,7 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
     @staticmethod
     def validator_from_registry(
         registry: CurrencyRegistry[C],
-    ) -> GeneralValidatorFunction:
+    ) -> core_schema.WithInfoValidatorFunction:
         def validate_overdraft(
             value: OverdraftDict | Overdraft[Currency],
             *args: object,
@@ -284,7 +289,9 @@ class OverdraftAdapter(GenericCurrencyAdapter[Overdraft[Currency], OverdraftDict
         return validate_overdraft
 
     @staticmethod
-    def validator_from_currency(currency: Currency) -> GeneralValidatorFunction:
+    def validator_from_currency(
+        currency: Currency,
+    ) -> core_schema.WithInfoValidatorFunction:
         def validate_overdraft(
             value: OverdraftDict | Overdraft[Currency],
             *args: object,
@@ -313,7 +320,7 @@ def build_generic_currency_schema(
     cls: type,
     source_type: type,
     adapter: type[GenericCurrencyAdapter[Any, Any]],
-) -> core_schema.CoreSchema:
+) -> core_schema.AfterValidatorFunctionSchema:
     if source_type is cls:
         # Not specialized allow any default Currency.
         validator = adapter.validator_from_registry(default_registry)
@@ -334,7 +341,7 @@ def build_generic_currency_schema(
             validator = adapter.validator_from_currency(currency)
             schema = adapter.schema(currency_schema((currency,)))
 
-    return core_schema.general_after_validator_function(
+    return core_schema.with_info_after_validator_function(
         schema=schema,
         function=validator,
         serialization=core_schema.wrap_serializer_function_ser_schema(
@@ -364,7 +371,7 @@ def build_currency_schema(cls: type[C]) -> core_schema.CoreSchema:
 
     return or_is_instance(
         cls=cls,
-        wrapped=core_schema.general_after_validator_function(
+        wrapped=core_schema.with_info_after_validator_function(
             function=validate_currency,
             schema=currency_schema(cls_registry.values()),
         ),
