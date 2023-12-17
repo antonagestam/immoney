@@ -1,6 +1,75 @@
 [build-system]
-requires = ["setuptools>=69.0.0", "wheel"]
+requires = [
+  "setuptools==69.0.2",
+  "setuptools-scm==8.0.4",
+  "wheel==0.42.0",
+]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+version_file = "src/immoney/_version.py"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+readme = {file = "README.md", content-type = "text/markdown; charset=UTF-8"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
+
+[project]
+name = "immoney"
+authors = [
+  { name="Anton Agestam", email="git@antonagestam.se" },
+]
+description = "Immutable money types for Python"
+license = {text = "BSD-3-Clause"}
+requires-python = ">=3.10"
+classifiers = [
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Development Status :: 4 - Beta",
+  "Typing :: Typed",
+]
+keywords = [
+  "money",
+  "finance",
+  "fintech",
+  "type-driven",
+  "immutable",
+]
+dynamic = ["version", "readme"]
+dependencies = [
+  "typing-extensions>=4.6.3",
+  "abcattrs>=0.3.2",
+]
+
+[project.optional-dependencies]
+pydantic = [
+  "pydantic>=2.0.3",
+  # 2.10 deprecates some functions under pydantic.core_schema.*, forcing dropping
+  # support for prior versions.
+  "pydantic-core>=2.10",
+]
+babel = ["babel>=2.12.1"]
+test = [
+  "pytest",
+  "coverage",
+  "hypothesis",
+]
+
+[project.urls]
+"Source Repository" = "https://github.com/antonagestam/immoney/"
+"Bug Tracker" = "https://github.com/antonagestam/immoney/issues"
 
 
 [tool.black]

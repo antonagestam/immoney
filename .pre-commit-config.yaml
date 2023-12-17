@@ -59,13 +59,17 @@ repos:
           - --parser=markdown
           - --print-width=88
           - --prose-wrap=always
-  - repo: https://github.com/mgedmin/check-manifest
-    rev: "0.49"
-    hooks:
-      - id: check-manifest
-        args: ["--no-build-isolation"]
-        additional_dependencies:
-          - wheel==0.42.0
+
+  # TODO: This does not work with VCS versioning.
+  # - repo: https://github.com/mgedmin/check-manifest
+  #   rev: "0.49"
+  #   hooks:
+  #     - id: check-manifest
+  #       args: ["--no-build-isolation"]
+  #       additional_dependencies:
+  #         - setuptools==69.0.2
+  #         - setuptools-scm==8.0.4
+  #         - wheel==0.42.0
 
 exclude: |
   (?x)(
