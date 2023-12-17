@@ -6,6 +6,9 @@ on:
 
 jobs:
   build-and-publish:
+    permissions:
+      # permission required for trusted publishing
+      id-token: write
     uses: less-action/reusables/.github/workflows/python-publish.yaml@main
     with:
       environment_url: https://pypi.org/p/immoney
