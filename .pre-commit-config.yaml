@@ -2,7 +2,7 @@ default_language_version:
   python: python3.12
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v4.4.0"
+    rev: "v4.5.0"
     hooks:
       - id: check-case-conflict
       - id: check-merge-conflict
@@ -11,20 +11,20 @@ repos:
       - id: debug-statements
       - id: detect-private-key
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: "2.7.1"
+    rev: "2.7.3"
     hooks:
       - id: editorconfig-checker
         alias: ec
         args:
           - -disable-indent-size
   - repo: https://github.com/asottile/pyupgrade
-    rev: "v3.6.0"
+    rev: "v3.15.0"
     hooks:
       - id: pyupgrade
         args:
           - --py310-plus
   - repo: https://github.com/pycqa/autoflake
-    rev: "v2.1.1"
+    rev: "v2.2.1"
     hooks:
       - id: autoflake
         args:
@@ -32,27 +32,27 @@ repos:
           - --remove-all-unused-imports
           - --ignore-init-module-imports
   - repo: https://github.com/pycqa/isort
-    rev: "5.12.0"
+    rev: "5.13.2"
     hooks:
       - id: isort
   - repo: https://github.com/psf/black
-    rev: "23.3.0"
+    rev: "23.12.0"
     hooks:
       - id: black
   - repo: https://github.com/asottile/blacken-docs
-    rev: "1.14.0"
+    rev: "1.16.0"
     hooks:
       - id: blacken-docs
         additional_dependencies: ["black==22.8.0"]
   - repo: https://github.com/pycqa/flake8
-    rev: "6.0.0"
+    rev: "6.1.0"
     hooks:
       - id: flake8
         additional_dependencies:
           - flake8-bugbear==22.9.11
           - flake8-comprehensions==3.10.0
   - repo: https://github.com/sirosen/check-jsonschema
-    rev: "0.23.2"
+    rev: "0.27.3"
     hooks:
       - id: check-github-workflows
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -71,7 +71,7 @@ repos:
           - pydantic-core==2.14.5
           - types-babel==2.11.0.15
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v2.7.1"
+    rev: "v3.1.0"
     hooks:
       - id: prettier
         alias: format-markdown
