@@ -15,7 +15,9 @@ class InstanceCache(type):
 
     _normalize: Callable[..., tuple[object, ...]]
 
-    @lru_cache
+    # lru_cache has a default bound, so while this does consume memory, it's a trivial
+    # amount, and worth it.
+    @lru_cache  # noqa: B019
     def __instantiate(cls, *args: object) -> object:
         return super().__call__(*args)
 

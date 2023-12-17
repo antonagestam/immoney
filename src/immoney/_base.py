@@ -398,7 +398,7 @@ class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
         ...
 
     def __truediv__(self, other: object) -> SubunitFraction[C_co]:
-        if not isinstance(other, (int, Fraction)):
+        if not isinstance(other, int | Fraction):
             return NotImplemented
         if other == 0:
             raise DivisionByZero
@@ -413,7 +413,7 @@ class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
         ...
 
     def __rtruediv__(self, other: object) -> SubunitFraction[C_co]:
-        if not isinstance(other, (int, Fraction)):
+        if not isinstance(other, int | Fraction):
             return NotImplemented
         if self.subunits == 0:
             raise DivisionByZero
@@ -576,7 +576,7 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
         ...
 
     def __mul__(self, other: object) -> Self:
-        if isinstance(other, (int, Fraction)):
+        if isinstance(other, int | Fraction):
             return SubunitFraction(self.value * other, self.currency)
         return NotImplemented
 
@@ -592,7 +592,7 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
         ...
 
     def __truediv__(self, other: object) -> Self:
-        if isinstance(other, (int, Fraction)):
+        if isinstance(other, int | Fraction):
             return SubunitFraction(self.value / other, self.currency)
         return NotImplemented
 
@@ -605,7 +605,7 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
         ...
 
     def __rtruediv__(self, other: object) -> Self:
-        if isinstance(other, (int, Fraction)):
+        if isinstance(other, int | Fraction):
             return SubunitFraction(other / self.value, self.currency)
         return NotImplemented
 
@@ -884,7 +884,7 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
         ...
 
     def __truediv__(self, other: object) -> SubunitFraction[C_co]:
-        if not isinstance(other, (int, Fraction)):
+        if not isinstance(other, int | Fraction):
             return NotImplemented
         if other == 0:
             raise DivisionByZero
@@ -899,7 +899,7 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
         ...
 
     def __rtruediv__(self, other: object) -> SubunitFraction[C_co]:
-        if not isinstance(other, (int, Fraction)):
+        if not isinstance(other, int | Fraction):
             return NotImplemented
         if other == 0:
             return SubunitFraction(0, self.currency)

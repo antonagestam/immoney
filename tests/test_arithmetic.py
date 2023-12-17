@@ -68,9 +68,9 @@ def truediv(
     b: Numeric,
     /,
 ) -> Fraction | SubunitFraction[Currency]:
-    if isinstance(a, (int, Fraction)):
+    if isinstance(a, int | Fraction):
         return Fraction(a, b)
-    elif isinstance(a, (Money, Overdraft, SubunitFraction)):
+    elif isinstance(a, Money | Overdraft | SubunitFraction):
         return a / b
     raise NotImplementedError
 
@@ -80,9 +80,9 @@ def rtruediv(
     b: Numeric,
     /,
 ) -> Fraction | SubunitFraction[Currency]:
-    if isinstance(a, (int, Fraction)):
+    if isinstance(a, int | Fraction):
         return Fraction(b, a)
-    elif isinstance(a, (Money, Overdraft, SubunitFraction)):
+    elif isinstance(a, Money | Overdraft | SubunitFraction):
         return b / a
     raise NotImplementedError
 

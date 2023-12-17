@@ -17,24 +17,10 @@ repos:
         alias: ec
         args:
           - -disable-indent-size
-  - repo: https://github.com/asottile/pyupgrade
-    rev: "v3.15.0"
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: "v0.1.8"
     hooks:
-      - id: pyupgrade
-        args:
-          - --py310-plus
-  - repo: https://github.com/pycqa/autoflake
-    rev: "v2.2.1"
-    hooks:
-      - id: autoflake
-        args:
-          - --in-place
-          - --remove-all-unused-imports
-          - --ignore-init-module-imports
-  - repo: https://github.com/pycqa/isort
-    rev: "5.13.2"
-    hooks:
-      - id: isort
+      - id: ruff
   - repo: https://github.com/psf/black
     rev: "23.12.0"
     hooks:
@@ -43,14 +29,7 @@ repos:
     rev: "1.16.0"
     hooks:
       - id: blacken-docs
-        additional_dependencies: ["black==22.8.0"]
-  - repo: https://github.com/pycqa/flake8
-    rev: "6.1.0"
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8-bugbear==22.9.11
-          - flake8-comprehensions==3.10.0
+        additional_dependencies: ["black==23.12.0"]
   - repo: https://github.com/sirosen/check-jsonschema
     rev: "0.27.3"
     hooks:
