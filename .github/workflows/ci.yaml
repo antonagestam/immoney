@@ -41,7 +41,7 @@ jobs:
       - run: |
           coverage report
           coverage xml
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         if: '!github.event.schedule'
         with:
           file: coverage.xml
