@@ -141,10 +141,12 @@ memory.
 
 Because localization is a large and complex problem to solve, rather than reinventing
 the wheel, this is mostly outsourced to the [Babel library][babel]. There's a wrapping
-function provided around Babel's `format_currency`, and a dependency "extra" to install
-a compatible version.
+function provided around Babel's `format_currency`, and a dependency ["extra"][extra] to
+install a compatible version.
 
 [babel]: https://github.com/python-babel/babel
+[extra]:
+  https://packaging.python.org/en/latest/tutorials/installing-packages/#installing-extras
 
 To use `immoney.babel`, make sure to install a compatible version.
 
