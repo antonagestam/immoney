@@ -27,7 +27,8 @@ These core aspects of this library each eliminate entire classes of bugs:
 - A comprehensive test suite with 100% coverage, including property tests that assert
   random [sequences of operations][sequence-test] behave as expected.
 
-[sequence-test]: https://github.com/antonagestam/immoney/blob/cc8ad48713fcf5c843e9832de9f722366b17a404/tests/test_arithmetic.py#L190
+[sequence-test]:
+  https://github.com/antonagestam/immoney/blob/cc8ad48713fcf5c843e9832de9f722366b17a404/tests/test_arithmetic.py#L190
 
 ### Features
 
