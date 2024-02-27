@@ -10,6 +10,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  COLUMNS: "120"
+  FORCE_COLOR: "1"
+  PYTHONUNBUFFERED: "1"
+
 jobs:
   lint:
     name: Static analysis
