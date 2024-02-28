@@ -16,8 +16,7 @@ $ pip install --require-venv immoney
 
 ### Design goals
 
-There are a few core design aspects of this library that each eliminate entire classes
-of bugs:
+These core aspects of this library each eliminate entire classes of bugs:
 
 - Exposed and internal data types are either immutable or faux immutable.
 - Invalid amounts of money cannot be represented. There is no such thing as `0.001` US
@@ -25,6 +24,11 @@ of bugs:
 - Builtin operations never implicitly lose precision.
 - Built from the ground-up with support for static type checking in mind. This means
   that bugs that attempt to mix currencies can be found by a static type checker.
+- A comprehensive test suite with 100% coverage, including property tests that assert
+  random [sequences of operations][sequence-test] behave as expected.
+
+[sequence-test]:
+  https://github.com/antonagestam/immoney/blob/cc8ad48713fcf5c843e9832de9f722366b17a404/tests/test_arithmetic.py#L190
 
 ### Features
 
