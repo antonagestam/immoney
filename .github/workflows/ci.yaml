@@ -45,6 +45,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mypy-3.12
             ${{ runner.os }}-mypy
+      - run: pip install -e .
       - run: pip install -r requirements.txt
       - run: mypy --strict
 
