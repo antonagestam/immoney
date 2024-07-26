@@ -1,6 +1,7 @@
 exclude Makefile
 exclude .editorconfig
 recursive-exclude .github *
+recursive-exclude .goose *
 recursive-exclude tests *
 recursive-include src py.typed
 exclude *.yaml

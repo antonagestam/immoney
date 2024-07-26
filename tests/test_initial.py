@@ -4,6 +4,7 @@ regression tests during early development. They have probably played out their r
 since then, and can be removed. Meaning that they are now duplicating other better
 written tests in the suite.
 """
+
 from decimal import Decimal
 from fractions import Fraction
 

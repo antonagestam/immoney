@@ -121,15 +121,13 @@ class Currency(Frozen, abc.ABC):
         a: int,
         b: int,
         /,
-    ) -> SubunitFraction[Self]:
-        ...
+    ) -> SubunitFraction[Self]: ...
 
     @overload
     def fraction(
         self,
         subunit_value: Fraction | Decimal | int,
-    ) -> SubunitFraction[Self]:
-        ...
+    ) -> SubunitFraction[Self]: ...
 
     def fraction(
         self,
@@ -190,12 +188,10 @@ class _ValueCurrencyPair(Frozen, Generic[C_co], metaclass=InstanceCache):
     __slots__ = ("subunits", "currency")
 
     @overload
-    def __init__(self, *, subunits: int, currency: C_co) -> None:
-        ...
+    def __init__(self, *, subunits: int, currency: C_co) -> None: ...
 
     @overload
-    def __init__(self, value: ParsableMoneyValue, currency: C_co, /) -> None:
-        ...
+    def __init__(self, value: ParsableMoneyValue, currency: C_co, /) -> None: ...
 
     def __init__(  # type: ignore[misc]
         self,
@@ -314,16 +310,13 @@ class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
         )
 
     @overload
-    def __mul__(self, other: int) -> Self | Overdraft[C_co]:
-        ...
+    def __mul__(self, other: int) -> Self | Overdraft[C_co]: ...
 
     @overload
-    def __mul__(self, other: Decimal) -> SubunitFraction[C_co]:
-        ...
+    def __mul__(self, other: Decimal) -> SubunitFraction[C_co]: ...
 
     @overload
-    def __mul__(self, other: Fraction) -> SubunitFraction[C_co]:
-        ...
+    def __mul__(self, other: Fraction) -> SubunitFraction[C_co]: ...
 
     def __mul__(
         self,
@@ -341,16 +334,13 @@ class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
         return NotImplemented
 
     @overload
-    def __rmul__(self, other: int) -> Self | Overdraft[C_co]:
-        ...
+    def __rmul__(self, other: int) -> Self | Overdraft[C_co]: ...
 
     @overload
-    def __rmul__(self, other: Decimal) -> SubunitFraction[C_co]:
-        ...
+    def __rmul__(self, other: Decimal) -> SubunitFraction[C_co]: ...
 
     @overload
-    def __rmul__(self, other: Fraction) -> SubunitFraction[C_co]:
-        ...
+    def __rmul__(self, other: Fraction) -> SubunitFraction[C_co]: ...
 
     def __rmul__(
         self,
@@ -390,12 +380,10 @@ class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
         )
 
     @overload
-    def __truediv__(self, other: int) -> SubunitFraction[C_co]:
-        ...
+    def __truediv__(self, other: int) -> SubunitFraction[C_co]: ...
 
     @overload
-    def __truediv__(self, other: Fraction) -> SubunitFraction[C_co]:
-        ...
+    def __truediv__(self, other: Fraction) -> SubunitFraction[C_co]: ...
 
     def __truediv__(self, other: object) -> SubunitFraction[C_co]:
         if not isinstance(other, int | Fraction):
@@ -405,12 +393,10 @@ class Money(_ValueCurrencyPair[C_co], Generic[C_co]):
         return SubunitFraction.from_money(self, other)
 
     @overload
-    def __rtruediv__(self, other: int) -> SubunitFraction[C_co]:
-        ...
+    def __rtruediv__(self, other: int) -> SubunitFraction[C_co]: ...
 
     @overload
-    def __rtruediv__(self, other: Fraction) -> SubunitFraction[C_co]:
-        ...
+    def __rtruediv__(self, other: Fraction) -> SubunitFraction[C_co]: ...
 
     def __rtruediv__(self, other: object) -> SubunitFraction[C_co]:
         if not isinstance(other, int | Fraction):
@@ -568,12 +554,10 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
         return self.__sub__(-other)
 
     @overload
-    def __mul__(self, other: int) -> Self:
-        ...
+    def __mul__(self, other: int) -> Self: ...
 
     @overload
-    def __mul__(self, other: Fraction) -> Self:
-        ...
+    def __mul__(self, other: Fraction) -> Self: ...
 
     def __mul__(self, other: object) -> Self:
         if isinstance(other, int | Fraction):
@@ -584,12 +568,10 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
         return self.__mul__(other)
 
     @overload
-    def __truediv__(self, other: int) -> Self:
-        ...
+    def __truediv__(self, other: int) -> Self: ...
 
     @overload
-    def __truediv__(self, other: Fraction) -> Self:
-        ...
+    def __truediv__(self, other: Fraction) -> Self: ...
 
     def __truediv__(self, other: object) -> Self:
         if isinstance(other, int | Fraction):
@@ -597,12 +579,10 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
         return NotImplemented
 
     @overload
-    def __rtruediv__(self, other: int) -> Self:
-        ...
+    def __rtruediv__(self, other: int) -> Self: ...
 
     @overload
-    def __rtruediv__(self, other: Fraction) -> Self:
-        ...
+    def __rtruediv__(self, other: Fraction) -> Self: ...
 
     def __rtruediv__(self, other: object) -> Self:
         if isinstance(other, int | Fraction):
@@ -740,12 +720,10 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
     def __add__(
         self: Overdraft[C_co],
         other: Money[C_co],
-    ) -> Money[C_co] | Overdraft[C_co]:
-        ...
+    ) -> Money[C_co] | Overdraft[C_co]: ...
 
     @overload
-    def __add__(self: Overdraft[C_co], other: Overdraft[C_co]) -> Overdraft[C_co]:
-        ...
+    def __add__(self: Overdraft[C_co], other: Overdraft[C_co]) -> Overdraft[C_co]: ...
 
     def __add__(self: Overdraft[C_co], other: object) -> Money[C_co] | Overdraft[C_co]:
         if isinstance(other, Overdraft) and self.currency == other.currency:
@@ -761,15 +739,13 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
         return self.__add__(other)
 
     @overload
-    def __sub__(self: Overdraft[C_co], other: Money[C_co]) -> Overdraft[C_co]:
-        ...
+    def __sub__(self: Overdraft[C_co], other: Money[C_co]) -> Overdraft[C_co]: ...
 
     @overload
     def __sub__(
         self: Overdraft[C_co],
         other: Overdraft[C_co],
-    ) -> Money[C_co] | Overdraft[C_co]:
-        ...
+    ) -> Money[C_co] | Overdraft[C_co]: ...
 
     def __sub__(
         self: Overdraft[C_co],
@@ -808,16 +784,13 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
         return self
 
     @overload
-    def __mul__(self, other: int) -> Money[C_co] | Overdraft[C_co]:
-        ...
+    def __mul__(self, other: int) -> Money[C_co] | Overdraft[C_co]: ...
 
     @overload
-    def __mul__(self, other: Decimal) -> SubunitFraction[C_co]:
-        ...
+    def __mul__(self, other: Decimal) -> SubunitFraction[C_co]: ...
 
     @overload
-    def __mul__(self, other: Fraction) -> SubunitFraction[C_co]:
-        ...
+    def __mul__(self, other: Fraction) -> SubunitFraction[C_co]: ...
 
     def __mul__(
         self,
@@ -832,12 +805,10 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
         return NotImplemented
 
     @overload
-    def __rmul__(self, other: int) -> Money[C_co] | Self:
-        ...
+    def __rmul__(self, other: int) -> Money[C_co] | Self: ...
 
     @overload
-    def __rmul__(self, other: Decimal | Fraction) -> SubunitFraction[C_co]:
-        ...
+    def __rmul__(self, other: Decimal | Fraction) -> SubunitFraction[C_co]: ...
 
     def __rmul__(
         self,
@@ -876,12 +847,10 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
         )
 
     @overload
-    def __truediv__(self, other: int) -> SubunitFraction[C_co]:
-        ...
+    def __truediv__(self, other: int) -> SubunitFraction[C_co]: ...
 
     @overload
-    def __truediv__(self, other: Fraction) -> SubunitFraction[C_co]:
-        ...
+    def __truediv__(self, other: Fraction) -> SubunitFraction[C_co]: ...
 
     def __truediv__(self, other: object) -> SubunitFraction[C_co]:
         if not isinstance(other, int | Fraction):
@@ -891,12 +860,10 @@ class Overdraft(_ValueCurrencyPair[C_co], Generic[C_co]):
         return SubunitFraction.from_overdraft(self, other)
 
     @overload
-    def __rtruediv__(self, other: int) -> SubunitFraction[C_co]:
-        ...
+    def __rtruediv__(self, other: int) -> SubunitFraction[C_co]: ...
 
     @overload
-    def __rtruediv__(self, other: Fraction) -> SubunitFraction[C_co]:
-        ...
+    def __rtruediv__(self, other: Fraction) -> SubunitFraction[C_co]: ...
 
     def __rtruediv__(self, other: object) -> SubunitFraction[C_co]:
         if not isinstance(other, int | Fraction):
