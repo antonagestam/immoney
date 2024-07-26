@@ -66,10 +66,21 @@ test = [
   "coverage",
   "hypothesis",
 ]
+type-check = [
+  "mypy",
+  "types-setuptools",
+  "types-babel",
+]
 
 [project.urls]
 "Source Repository" = "https://github.com/antonagestam/immoney/"
 "Bug Tracker" = "https://github.com/antonagestam/immoney/issues"
+
+
+[tool.pip-tools]
+generate-hashes = true
+strip-extras = true
+upgrade = true
 
 
 [tool.black]
