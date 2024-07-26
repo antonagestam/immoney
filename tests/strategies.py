@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import random
 from typing import Final
 from typing import TypeAlias
 
@@ -9,6 +8,7 @@ from hypothesis.strategies import decimals
 from hypothesis.strategies import fractions
 from hypothesis.strategies import integers
 from hypothesis.strategies import just
+from hypothesis.strategies import sampled_from
 from hypothesis.strategies import text
 
 from immoney import Currency
@@ -35,9 +35,10 @@ valid_overdraft_subunits: Final = integers(min_value=1)
 def currencies(
     draw,
     code_values=text(max_size=3, min_size=3),
+    subunit_values=sampled_from(tuple(valid_subunit)),
 ):
     class Subclass(Currency):
-        subunit = random.choice(tuple(valid_subunit))
+        subunit = draw(subunit_values)
         code = draw(code_values)
 
     return Subclass()
