@@ -219,8 +219,7 @@ from immoney.currencies import Currency
 __currencies = CurrencyCollector()
 
 
-class SpaceCurrency(Currency, abc.ABC):
-    ...
+class SpaceCurrency(Currency, abc.ABC): ...
 
 
 class MoonCoinType(SpaceCurrency):
@@ -260,6 +259,7 @@ Pydantic model fields.
 >>> from immoney.currencies import USD
 >>> class Model(BaseModel, frozen=True):
 ...     money: Money
+...
 >>> print(instance.model_dump_json(indent=2))
 {
   "money": {
@@ -291,17 +291,13 @@ Now, to run the test suite, execute the following.
 $ pytest
 ```
 
-Static analysis and formatting is configured with [pre-commit].
+Static analysis and formatting is configured with [goose].
 
-[pre-commit]: https://pre-commit.com/
+[goose]: https://github.com/antonagestam/goose
 
 ```shell
-# configure hooks to run when pushing
-$ pre-commit install -t pre-push
-# or on every commit, if you prefer
-$ pre-commit install -t pre-commit
 # run all checks
-$ pre-commit run --all-files
+$ python3 -m goose run --select=all
 # or just a single hook
-$ pre-commit run mypy --all-files
+$ python3 -m goose run ruff-format --select=all
 ```

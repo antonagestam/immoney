@@ -73,27 +73,23 @@ U_co = TypeVar("U_co", MoneyDict, OverdraftDict, SubunitFractionDict, covariant=
 class GenericCurrencyAdapter(Protocol[T_contra, U_co]):
     @staticmethod
     @abc.abstractmethod
-    def serialize(value: T_contra, *args: object) -> U_co:
-        ...
+    def serialize(value: T_contra, *args: object) -> U_co: ...
 
     @staticmethod
     @abc.abstractmethod
-    def schema(currency_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        ...
+    def schema(currency_schema: core_schema.CoreSchema) -> core_schema.CoreSchema: ...
 
     @staticmethod
     @abc.abstractmethod
     def validator_from_registry(
         registry: CurrencyRegistry[Currency],
-    ) -> core_schema.WithInfoValidatorFunction:
-        ...
+    ) -> core_schema.WithInfoValidatorFunction: ...
 
     @staticmethod
     @abc.abstractmethod
     def validator_from_currency(
         currency: Currency,
-    ) -> core_schema.WithInfoValidatorFunction:
-        ...
+    ) -> core_schema.WithInfoValidatorFunction: ...
 
 
 class MoneyAdapter(GenericCurrencyAdapter[Money[Currency], MoneyDict]):

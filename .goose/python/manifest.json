@@ -1,0 +1,1 @@
+{"source_dependencies":["blacken-docs","check-jsonschema","editorconfig-checker","pre-commit-hooks","ruff"],"lock_files":[{"path":"requirements.txt","checksum":"sha256:7afa7fcdc7615d74c49d1c8c2694e56fdf67c3f33031aa3e2cc708a131dc2165"}],"checksum":"sha256:12d32d65a454f2e9b3299a11d829a52a5b5fbafa74daea9515df2fd2140586ef"}
