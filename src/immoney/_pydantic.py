@@ -39,9 +39,16 @@ class OverdraftDict(TypedDict):
 
 def extract_currency_type_arg(source_type: type) -> type[Currency]:
     match get_args(source_type):
-        case (type() as currency_type,):
-            assert issubclass(currency_type, Currency)
+        case (type() as currency_type,) if issubclass(currency_type, Currency):
             return currency_type
+        # TypeVar with Currency bound.
+        case (TypeVar(__bound__=type() as currency_type),) if issubclass(
+            currency_type, Currency
+        ):
+            return currency_type
+        # TypeVar without bound.
+        case (TypeVar(__bound__=None),):
+            return Currency
         case invalid:  # pragma: no cover
             raise TypeError(f"Invalid type args: {invalid!r}.")
 

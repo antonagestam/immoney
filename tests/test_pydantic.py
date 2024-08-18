@@ -1,5 +1,7 @@
 import json
 from fractions import Fraction
+from typing import Generic
+from typing import TypeVar
 
 import pytest
 from pydantic import BaseModel
@@ -259,6 +261,200 @@ class TestMoneyModel:
             },
             "required": ["money"],
             "title": MoneyModel.__name__,
+            "type": "object",
+        }
+
+
+C_bounded = TypeVar("C_bounded", bound=Currency)
+
+
+class BoundedGenericMoneyModel(BaseModel, Generic[C_bounded]):
+    money: Money[C_bounded]
+
+
+class TestBoundedGenericMoneyModel:
+    @pytest.mark.parametrize(
+        ("subunits", "currency_code", "expected"),
+        (
+            (4990, "USD", USD("49.90")),
+            (4990, "EUR", EUR("49.90")),
+            (0, "NOK", NOK(0)),
+        ),
+    )
+    def test_can_roundtrip_valid_data(
+        self,
+        subunits: int,
+        currency_code: str,
+        expected: Money[C_bounded],
+    ) -> None:
+        data = {
+            "money": {
+                "subunits": subunits,
+                "currency": currency_code,
+            }
+        }
+
+        instance = BoundedGenericMoneyModel[C_bounded].model_validate(data)
+        assert instance.money == expected
+        assert json.loads(instance.model_dump_json()) == data
+
+    def test_parsing_raises_validation_error_for_negative_value(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=r"Input should be greater than or equal to 0",
+        ):
+            BoundedGenericMoneyModel.model_validate(
+                {
+                    "money": {
+                        "currency": "EUR",
+                        "subunits": -1,
+                    },
+                }
+            )
+
+    def test_parsing_raises_validation_error_for_invalid_currency(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=r"Input should be.*\[type=literal_error",
+        ):
+            BoundedGenericMoneyModel.model_validate(
+                {
+                    "money": {
+                        "currency": "JCN",
+                        "subunits": 4990,
+                    },
+                }
+            )
+
+    def test_can_instantiate_valid_value(self) -> None:
+        instance = BoundedGenericMoneyModel(money=USD("49.90"))
+        assert instance.money == USD("49.90")
+
+    def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
+        with pytest.raises(ValidationError, match=r"Currency is not registered"):
+            BoundedGenericMoneyModel(money=JCN(1))
+
+    def test_can_generate_schema(self) -> None:
+        assert BoundedGenericMoneyModel.model_json_schema() == {
+            "properties": {
+                "money": {
+                    "properties": {
+                        "currency": {
+                            "enum": sorted_items_equal(default_registry.keys()),
+                            "title": "Currency",
+                            "type": "string",
+                        },
+                        "subunits": {
+                            "minimum": 0,
+                            "title": "Subunits",
+                            "type": "integer",
+                        },
+                    },
+                    "required": sorted_items_equal(["subunits", "currency"]),
+                    "title": "Money",
+                    "type": "object",
+                },
+            },
+            "required": ["money"],
+            "title": BoundedGenericMoneyModel.__name__,
+            "type": "object",
+        }
+
+
+C_unbound = TypeVar("C_unbound")
+
+
+class UnboundGenericMoneyModel(BaseModel, Generic[C_unbound]):
+    # mypy rightfully errors here, demanding that the type var is bounded to
+    # Currency, but we still want to test this case.
+    money: Money[C_unbound]  # type: ignore[type-var]
+
+
+class TestUnboundGenericMoneyModel:
+    @pytest.mark.parametrize(
+        ("subunits", "currency_code", "expected"),
+        (
+            (4990, "USD", USD("49.90")),
+            (4990, "EUR", EUR("49.90")),
+            (0, "NOK", NOK(0)),
+        ),
+    )
+    def test_can_roundtrip_valid_data(
+        self,
+        subunits: int,
+        currency_code: str,
+        expected: Money[C_unbound],  # type: ignore[type-var]
+    ) -> None:
+        data = {
+            "money": {
+                "subunits": subunits,
+                "currency": currency_code,
+            }
+        }
+
+        instance = UnboundGenericMoneyModel[C_unbound].model_validate(data)
+        assert instance.money == expected
+        assert json.loads(instance.model_dump_json()) == data
+
+    def test_parsing_raises_validation_error_for_negative_value(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=r"Input should be greater than or equal to 0",
+        ):
+            UnboundGenericMoneyModel.model_validate(
+                {
+                    "money": {
+                        "currency": "EUR",
+                        "subunits": -1,
+                    },
+                }
+            )
+
+    def test_parsing_raises_validation_error_for_invalid_currency(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=r"Input should be.*\[type=literal_error",
+        ):
+            UnboundGenericMoneyModel.model_validate(
+                {
+                    "money": {
+                        "currency": "JCN",
+                        "subunits": 4990,
+                    },
+                }
+            )
+
+    def test_can_instantiate_valid_value(self) -> None:
+        instance = UnboundGenericMoneyModel(money=USD("49.90"))
+        assert instance.money == USD("49.90")
+
+    def test_instantiation_raises_validation_error_for_invalid_currency(self) -> None:
+        with pytest.raises(ValidationError, match=r"Currency is not registered"):
+            UnboundGenericMoneyModel(money=JCN(1))
+
+    def test_can_generate_schema(self) -> None:
+        assert UnboundGenericMoneyModel.model_json_schema() == {
+            "properties": {
+                "money": {
+                    "properties": {
+                        "currency": {
+                            "enum": sorted_items_equal(default_registry.keys()),
+                            "title": "Currency",
+                            "type": "string",
+                        },
+                        "subunits": {
+                            "minimum": 0,
+                            "title": "Subunits",
+                            "type": "integer",
+                        },
+                    },
+                    "required": sorted_items_equal(["subunits", "currency"]),
+                    "title": "Money",
+                    "type": "object",
+                },
+            },
+            "required": ["money"],
+            "title": UnboundGenericMoneyModel.__name__,
             "type": "object",
         }
 
