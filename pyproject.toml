@@ -95,6 +95,8 @@ addopts = "--doctest-modules"
 [tool.ruff]
 fix = true
 target-version = "py310"
+
+[tool.ruff.lint]
 extend-select = [
   # bugbear
   "B",
@@ -140,17 +142,17 @@ extend-ignore = [
   "B008",
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 force-single-line = true
 known-first-party = ["immoney", "tests"]
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 max-complexity = 10
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"
 
-[tool.ruff.extend-per-file-ignores]
+[tool.ruff.lint.extend-per-file-ignores]
 "tests/*" = [
   # Cryptographically safe usage of PRNGs is not relevant in tests.
   "S311",
