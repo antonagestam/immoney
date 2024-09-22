@@ -18,7 +18,7 @@ env:
 jobs:
   lint:
     name: Static analysis
-    uses: antonagestam/goose/.github/workflows/run.yaml@7f5ef682286e63cb6f98cc83b5ad7f32c521e266
+    uses: antonagestam/goose/.github/workflows/run.yaml@a2bc2e5635734e78e58da32f216e09d88211eaea
 
   type-check:
     name: Type check
