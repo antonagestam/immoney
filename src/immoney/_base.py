@@ -12,13 +12,13 @@ from typing import ClassVar
 from typing import Final
 from typing import Generic
 from typing import TypeAlias
-from typing import TypeVar
 from typing import final
 from typing import overload
 
 from abcattrs import Abstract
 from abcattrs import abstractattrs
 from typing_extensions import Self
+from typing_extensions import TypeVar
 from typing_extensions import assert_never
 
 from ._cache import InstanceCache
@@ -173,6 +173,15 @@ def _parse_currency_from_arg(
     return value
 
 
+C_inv = TypeVar(
+    "C_inv",
+    bound=Currency,
+    covariant=False,
+    contravariant=False,
+    default=Currency,
+)
+
+
 def _dispatch_type(subunits: int, currency: C_inv) -> Money[C_inv] | Overdraft[C_inv]:
     return (
         Money.from_subunit(subunits, currency)
@@ -181,7 +190,7 @@ def _dispatch_type(subunits: int, currency: C_inv) -> Money[C_inv] | Overdraft[C
     )
 
 
-C_co = TypeVar("C_co", bound=Currency, covariant=True)
+C_co = TypeVar("C_co", bound=Currency, covariant=True, default=Currency)
 
 
 class _ValueCurrencyPair(Frozen, Generic[C_co], metaclass=InstanceCache):
@@ -236,9 +245,6 @@ class _ValueCurrencyPair(Frozen, Generic[C_co], metaclass=InstanceCache):
             if length <= subunit_width
             else (string_value[:-subunit_width], string_value[-subunit_width:])
         )
-
-
-C_inv = TypeVar("C_inv", bound=Currency, covariant=False, contravariant=False)
 
 
 @final

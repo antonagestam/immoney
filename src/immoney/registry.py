@@ -2,11 +2,12 @@ from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Generic
 from typing import TypeAlias
-from typing import TypeVar
+
+from typing_extensions import TypeVar
 
 from ._base import Currency
 
-C = TypeVar("C", bound=Currency)
+C = TypeVar("C", bound=Currency, default=Currency)
 CurrencyRegistry: TypeAlias = Mapping[str, C]
 
 

@@ -3,9 +3,10 @@ from collections.abc import Iterable
 from typing import Any
 from typing import Final
 from typing import Generic
-from typing import TypeVar
 
-T = TypeVar("T")
+from typing_extensions import TypeVar
+
+T = TypeVar("T", default=object)
 
 
 class Check(Generic[T]):

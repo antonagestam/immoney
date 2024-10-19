@@ -6,10 +6,10 @@ from fractions import Fraction
 from typing import Any
 from typing import Protocol
 from typing import TypedDict
-from typing import TypeVar
 from typing import get_args
 
 from pydantic_core import core_schema
+from typing_extensions import TypeVar
 
 from . import Currency
 from . import Money
@@ -18,7 +18,7 @@ from . import SubunitFraction
 from .currencies import registry as default_registry
 from .registry import CurrencyRegistry
 
-C = TypeVar("C", bound=Currency)
+C = TypeVar("C", bound=Currency, default=Currency)
 
 
 class MoneyDict(TypedDict):
@@ -74,7 +74,13 @@ T_contra = TypeVar(
     SubunitFraction[Currency],
     contravariant=True,
 )
-U_co = TypeVar("U_co", MoneyDict, OverdraftDict, SubunitFractionDict, covariant=True)
+U_co = TypeVar(
+    "U_co",
+    MoneyDict,
+    OverdraftDict,
+    SubunitFractionDict,
+    covariant=True,
+)
 
 
 class GenericCurrencyAdapter(Protocol[T_contra, U_co]):

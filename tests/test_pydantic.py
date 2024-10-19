@@ -173,7 +173,7 @@ class TestCustomCurrencyModel:
 
 class MoneyModel(BaseModel):
     # Important: do not specialize this type.
-    money: Money  # type: ignore[type-arg]
+    money: Money
 
 
 class TestMoneyModel:
@@ -199,6 +199,7 @@ class TestMoneyModel:
         }
 
         instance = MoneyModel.model_validate(data)
+        assert_type(instance.money, Money[Currency])
         assert instance.money == expected
         assert json.loads(instance.model_dump_json()) == data
 
@@ -594,7 +595,7 @@ class TestCustomMoneyModel:
 
 
 class FractionModel(BaseModel):
-    value_field: SubunitFraction  # type: ignore[type-arg]
+    value_field: SubunitFraction
 
 
 class TestFractionModel:
@@ -617,6 +618,7 @@ class TestFractionModel:
             }
         }
         instance = FractionModel.model_validate(data)
+        assert_type(instance.value_field, SubunitFraction[Currency])
         assert instance.value_field == INR.fraction(Fraction(numerator, denominator))
         assert json.loads(instance.model_dump_json()) == {
             "value_field": {
@@ -852,7 +854,7 @@ class TestSpecializedFractionModel:
 
 
 class DefaultOverdraftModel(BaseModel):
-    overdraft: Overdraft  # type: ignore[type-arg]
+    overdraft: Overdraft
 
 
 class TestDefaultOverdraftModel:
@@ -878,6 +880,7 @@ class TestDefaultOverdraftModel:
         }
 
         instance = DefaultOverdraftModel.model_validate(data)
+        assert_type(instance.overdraft, Overdraft[Currency])
         assert instance.overdraft == expected
         assert json.loads(instance.model_dump_json()) == data
 
