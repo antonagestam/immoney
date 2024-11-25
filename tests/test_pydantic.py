@@ -506,7 +506,6 @@ class TestSpecializedMoneyModel:
                         "currency": {
                             "const": "USD",
                             "title": "Currency",
-                            "enum": ["USD"],
                             "type": "string",
                         },
                         "subunits": {
@@ -828,7 +827,6 @@ class TestSpecializedFractionModel:
                         "currency": {
                             "const": "INR",
                             "title": "Currency",
-                            "enum": ["INR"],
                             "type": "string",
                         },
                         "numerator": {
@@ -1071,7 +1069,6 @@ class TestSpecializedOverdraftModel:
                         "currency": {
                             "const": "CUP",
                             "title": "Currency",
-                            "enum": ["CUP"],
                             "type": "string",
                         },
                         "overdraft_subunits": {
