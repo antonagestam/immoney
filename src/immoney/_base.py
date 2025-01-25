@@ -474,7 +474,7 @@ class SubunitFraction(Frozen, Generic[C_co], metaclass=InstanceCache):
         return Fraction(value), _parse_currency_from_arg(cls, currency)
 
     def __repr__(self) -> str:
-        return f"{type(self).__qualname__}" f"({str(self.value)!r}, {self.currency})"
+        return f"{type(self).__qualname__}({str(self.value)!r}, {self.currency})"
 
     def __hash__(self) -> int:
         return hash((type(self), self.currency, self.value))
