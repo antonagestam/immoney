@@ -13,3 +13,4 @@ include LICENSE
 exclude generate-currencies.py
 exclude .gitignore
 exclude setup.cfg
+exclude mypy.ini
