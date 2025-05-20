@@ -78,12 +78,6 @@ type-check = [
 "Bug Tracker" = "https://github.com/antonagestam/immoney/issues"
 
 
-[tool.pip-tools]
-generate-hashes = true
-strip-extras = true
-upgrade = true
-
-
 [tool.black]
 target-version = ["py310"]
 
